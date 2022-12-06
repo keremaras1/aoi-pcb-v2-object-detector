@@ -16,6 +16,10 @@ class AOILoss:
         square_loss = 0.5 * (y_true - y_pred)**2
         l1_loss = tf.where(tf.math.less(absolute_loss, 1.0), square_loss, absolute_loss - 0.5)
         return tf.reduce_sum(l1_loss, axis=-1)
+    
+    def L2_loss(self, y_true, y_pred):
+        square_loss = (y_true - y_pred)**2
+        return tf.reduce_sum(square_loss, axis=-1)
 
     def log_loss(self, y_true, y_pred):
         y_pred = tf.maximum(y_pred, 1e-15)
@@ -27,7 +31,7 @@ class AOILoss:
         n_boxes = tf.shape(y_pred)[1]
         
         classification_loss = tf.cast(self.log_loss(y_true[:, :, :-10], y_pred[:, :, :-10]), dtype=tf.float32)
-        localization_loss = tf.cast(self.smooth_L1_loss(y_true[:, :, -10:-2], y_pred[:, :, -10:-2]), dtype=tf.float32)
+        localization_loss = tf.cast(self.L2_loss(y_true[:, :, -10:-2], y_pred[:, :, -10:-2]), dtype=tf.float32)
 
         negatives = y_true[:, :, 0]  # Tensor of shape (batch_size, n_boxes)
         positives = tf.cast(tf.reduce_max(y_true[:, :, 1:-10], axis=-1), dtype=tf.float32)

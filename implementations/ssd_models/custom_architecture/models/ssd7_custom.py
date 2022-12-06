@@ -44,7 +44,7 @@ def build_model(image_size,
     ####################################################################
 
     x = Input(shape=(img_height, img_width, img_channels))
-    # x = GaussianNoise(0.1)(x)
+    x = GaussianNoise(0.1)(x)
 
     # The following identity layer is only needed so that the subsequent lambda layers can be optional.
     x1 = Lambda(identity_layer, output_shape=(img_height, img_width, img_channels), name='identity_layer')(x)
@@ -81,6 +81,10 @@ def build_model(image_size,
 
     conv4 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
                    kernel_regularizer=l2(l2_reg), name='conv4')(pool3)
+    
+    # conv4 = L2Normalization(gamma_init=20, name='conv4')(conv4)
+    
+    
     conv4 = BatchNormalization(axis=3, momentum=0.99, name='bn4')(conv4)
     conv4 = ELU(name='elu4')(conv4)
 
