@@ -62,13 +62,3 @@ class DataGenerator:
         self.img_to_np()
         self.generate_y()
         return self.X, self.y_encoded
-
-
-encoder = SSDInputEncoder(300,
-                          300,
-                          1,
-                          predictor_sizes=[(25, 25)],
-                          normalize_coords=True,
-                          background_id=0)
-
-generator = DataGenerator(parent_dir='/Users/keremaras/AOI_Project/Datasets/self_generated_custom', encoder=encoder)

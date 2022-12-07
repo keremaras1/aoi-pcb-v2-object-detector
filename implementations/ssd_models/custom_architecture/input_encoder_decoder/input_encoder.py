@@ -54,7 +54,7 @@ class SSDInputEncoder:
 
         y_encoded[:, :, self.background_id] = 1  # All boxes are background boxes by default
         class_vectors = np.eye(self.n_classes)
-        for i in range(1):
+        for i in range(batch_size):
 
             # If there is no ground truth for this batch item, there is nothing to match.
             if ground_truth_labels[i].size == 0:
@@ -77,10 +77,10 @@ class SSDInputEncoder:
 
             y_encoded[i, box_filter_matches[1], :-2] = labels_one_hot
 
-            positives = y_encoded[i, y_encoded[i, :, 0] == 0]
-            neutral_idx = get_neutral_centers(positives, y_encoded[i, :, -2:])
+            # positives = y_encoded[i, y_encoded[i, :, 0] == 0]
+            # neutral_idx = get_neutral_centers(positives, y_encoded[i, :, -2:])
 
-            y_encoded[i, neutral_idx, :-10] = 0
+            # y_encoded[i, neutral_idx, 1] = 1
 
         y_encoded[:, :, [-10, -8, -6, -4]] -= np.expand_dims(y_encoded[:, :, -2], axis=-1)
         y_encoded[:, :, [-9, -7, -5, -3]] -= np.expand_dims(y_encoded[:, :, -1], axis=-1)

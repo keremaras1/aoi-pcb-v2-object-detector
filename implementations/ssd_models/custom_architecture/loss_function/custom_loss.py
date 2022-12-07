@@ -30,7 +30,7 @@ class AOILoss:
         batch_size = tf.shape(y_pred)[0]  # Output dtype: tf.int32
         n_boxes = tf.shape(y_pred)[1]
         
-        classification_loss = tf.cast(self.log_loss(y_true[:, :, :-10], y_pred[:, :, :-10]), dtype=tf.float32)
+        classification_loss = tf.cast(self.smooth_L1_loss(y_true[:, :, :-10], y_pred[:, :, :-10]), dtype=tf.float32)
         localization_loss = tf.cast(self.L2_loss(y_true[:, :, -10:-2], y_pred[:, :, -10:-2]), dtype=tf.float32)
 
         negatives = y_true[:, :, 0]  # Tensor of shape (batch_size, n_boxes)
