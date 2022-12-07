@@ -51,3 +51,37 @@ def get_matches(gt_box_centers, bb_box_centers, cell_hw):
         matches_mat[i, j] = 1
 
     return matches_mat
+
+
+def get_neutral_centers(positive_labels, all_centers):
+    # positive_offsets: (n_matched, 8), positive centers: (n_matched, 2), negative_centers: (n_not_centers, 2)
+    positive_centers = positive_labels[:, -2:]
+
+    radius_x = np.max(np.abs(positive_labels[:, [-10, -8, -6, -4]] - np.expand_dims(positive_labels[:, -2], axis=-1)),
+                      axis=0)
+    radius_y = np.max(np.abs(positive_labels[:, [-9, -7, -5, -3]] - np.expand_dims(positive_labels[:, -1], axis=-1)),
+                      axis=0)
+
+    lower_bound_x = positive_centers[:, 0] - radius_x
+    upper_bound_x = positive_centers[:, 0] + radius_x
+
+    lower_bound_y = positive_centers[:, 1] - radius_y
+    upper_bound_y = positive_centers[:, 1] + radius_y
+
+    x_bounds = np.array((lower_bound_x, upper_bound_x)).T
+    y_bounds = np.array((lower_bound_y, upper_bound_y)).T
+
+    index = []
+    for center in all_centers:
+        if center.tolist() in positive_centers.tolist():
+            index.append(False)
+            continue
+
+        x_crit = (x_bounds[:, 0] < center[0]) & (x_bounds[:, 1] > center[0])
+        y_crit = (y_bounds[:, 0] < center[1]) & (y_bounds[:, 1] > center[1])
+        if np.any(x_crit & y_crit):
+            index.append(True)
+        else:
+            index.append(False)
+
+    return np.argwhere(np.array(index) == True)
