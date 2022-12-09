@@ -18,6 +18,26 @@ def convert_center_to_corners(tensor):
     return tensor1
 
 
+def get_matches2(gt_box_centers, bb_box_centers):
+
+    matches_idx = []
+    for gt_center in gt_box_centers:
+        dist = np.abs(bb_box_centers - gt_center)
+        norm = np.sqrt(np.sum(dist**2, axis=-1))
+        match = np.argmin(norm)
+
+        while match in matches_idx:
+            norm[match] = np.inf
+            match = np.argmin(norm)
+
+        matches_idx.append(match)
+
+    assert len(matches_idx) == gt_box_centers.shape[0], "The number of matches is not equal to the number of gt_centers. gt_centers = {g}, matches = {m}".format(g=gt_box_centers.shape[0], m=len(matches_idx))
+    return matches_idx
+
+
+
+
 def get_matches(gt_box_centers, bb_box_centers, cell_hw):
     assert len(cell_hw) == 1, 'Expected a single feature map cell size instead got {i}'.format(i=len(cell_hw))
 
@@ -31,10 +51,11 @@ def get_matches(gt_box_centers, bb_box_centers, cell_hw):
 
     dist_matrix = np.abs(bb_matrix - gt_matrix)
 
-    valid_x = dist_matrix[:, 0] <= hw_tuple[1] / 2
-    valid_y = dist_matrix[:, 1] <= hw_tuple[0] / 2
+    valid_x = dist_matrix[:, 0] <= hw_tuple[1] / 2.0
+    valid_y = dist_matrix[:, 1] <= hw_tuple[0] / 2.0
 
-    valid_center_idx = np.argwhere(valid_x & valid_y)
+    valid_center_idx = np.argwhere(np.logical_and(valid_x, valid_y))
+
     matches_mat = np.zeros((m, n), dtype=int)
 
     duplicate_checker = []
@@ -43,8 +64,8 @@ def get_matches(gt_box_centers, bb_box_centers, cell_hw):
 
         if i in duplicate_checker:
             continue
-        else:
-            duplicate_checker.append(i)
+
+        duplicate_checker.append(i)
 
         j = idx % n
 

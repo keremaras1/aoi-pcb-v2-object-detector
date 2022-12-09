@@ -1,6 +1,6 @@
 import numpy as np
 
-from input_encoder_decoder.bb_utils import get_matches, get_neutral_centers
+from input_encoder_decoder.bb_utils import get_matches, get_neutral_centers, get_matches2
 
 
 class SSDInputEncoder:
@@ -70,12 +70,8 @@ class SSDInputEncoder:
             labels_one_hot = np.concatenate(
                 [classes_one_hot, labels[:, [tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y]]], axis=-1)
 
-            matches = get_matches(labels[:, [cx, cy]], y_encoded[i, :, -2:], self.steps_diag)
-            box_filter_matches = np.where(matches == 1)
-
-            assert np.array(box_filter_matches).shape[1] == matches.shape[0]
-
-            y_encoded[i, box_filter_matches[1], :-2] = labels_one_hot
+            matches = get_matches2(labels[:, [cx, cy]], y_encoded[i, :, -2:])
+            y_encoded[i, matches, :-2] = labels_one_hot
 
             # positives = y_encoded[i, y_encoded[i, :, 0] == 0]
             # neutral_idx = get_neutral_centers(positives, y_encoded[i, :, -2:])
