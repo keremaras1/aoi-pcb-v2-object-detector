@@ -87,11 +87,31 @@ def build_model(image_size,
     
     conv4 = BatchNormalization(axis=3, momentum=0.99, name='bn4')(conv4)
     conv4 = ELU(name='elu4')(conv4)
+    
+    ######### ADDITIONAL BASE NETWORK LAYERS ###########################
+    
+    pool4 = MaxPooling2D(pool_size=(2, 2), name='pool4')(conv4)
+
+    conv5 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv5')(pool4)
+    conv5 = BatchNormalization(axis=3, momentum=0.99, name='bn5')(conv5)
+    conv5 = ELU(name='elu5')(conv5)
+    pool5 = MaxPooling2D(pool_size=(2, 2), name='pool5')(conv5)
+
+    conv6 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv6')(pool5)
+    conv6 = BatchNormalization(axis=3, momentum=0.99, name='bn6')(conv6)
+    conv6 = ELU(name='elu6')(conv6)
+    pool6 = MaxPooling2D(pool_size=(2, 2), name='pool6')(conv6)
+
+    conv7 = Conv2D(32, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv7')(pool6)
+    conv7 = BatchNormalization(axis=3, momentum=0.99, name='bn7')(conv7)
+    conv7 = ELU(name='elu7')(conv7)
+    
+    ####################################################################
 
     classes4 = Conv2D(n_boxes * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                      kernel_regularizer=l2(l2_reg), name='classes4')(conv4)
+                      kernel_regularizer=l2(l2_reg), name='classes4')(conv7)
     boxes4 = Conv2D(n_boxes * 8, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                    kernel_regularizer=l2(l2_reg), name='boxes4')(conv4)
+                    kernel_regularizer=l2(l2_reg), name='boxes4')(conv7)
     centers4 = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='centers4')(boxes4)
 
     classes4_reshaped = Reshape((-1, n_classes), name='classes4_reshape')(classes4)
