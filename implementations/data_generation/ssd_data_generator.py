@@ -165,7 +165,7 @@ class SSD_Data_Generator:
         self.prelabels_list = []
 
     def get_ic_scale(self, ratio):
-        new_ratio = random.uniform(ratio - 0.05, ratio + 0.05)
+        new_ratio = random.uniform(ratio - 0.1, ratio + 0.1)
         org_size = self.background_ref.size[0]
         size = int(np.random.uniform(org_size * new_ratio, org_size * new_ratio))
         return tuple((size, size))
