@@ -82,9 +82,6 @@ def build_model(image_size,
     conv4 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
                    kernel_regularizer=l2(l2_reg), name='conv4')(pool3)
     
-    # conv4 = L2Normalization(gamma_init=20, name='conv4')(conv4)
-    
-    
     conv4 = BatchNormalization(axis=3, momentum=0.99, name='bn4')(conv4)
     conv4 = ELU(name='elu4')(conv4)
     
@@ -108,19 +105,19 @@ def build_model(image_size,
     
     ####################################################################
 
-    classes4 = Conv2D(n_boxes * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                      kernel_regularizer=l2(l2_reg), name='classes4')(conv7)
-    boxes4 = Conv2D(n_boxes * 8, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                    kernel_regularizer=l2(l2_reg), name='boxes4')(conv7)
-    centers4 = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='centers4')(boxes4)
+    classes7 = Conv2D(n_boxes * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+                      kernel_regularizer=l2(l2_reg), name='classes7')(conv7)
+    corners7 = Conv2D(n_boxes * 8, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+                    kernel_regularizer=l2(l2_reg), name='corners7')(conv7)
+    centers7 = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='centers7')(corners7)
 
-    classes4_reshaped = Reshape((-1, n_classes), name='classes4_reshape')(classes4)
-    boxes4_reshaped = Reshape((-1, 8), name='boxes4_reshape')(boxes4)
-    centers4_reshaped = Reshape((-1, 2), name='anchors4_reshape')(centers4)
+    classes7_reshaped = Reshape((-1, n_classes), name='classes7_reshaped')(classes7)
+    corners7_reshaped = Reshape((-1, 8), name='corners7_reshaped')(corners7)
+    centers7_reshaped = Reshape((-1, 2), name='centers7_reshaped')(centers7)
 
-    classes_softmax = Activation('softmax', name='classes_softmax')(classes4_reshaped)
+    classes_softmax = Activation('softmax', name='classes_softmax')(classes7_reshaped)
 
-    predictions = Concatenate(axis=2, name='predictions')([classes_softmax, boxes4_reshaped, centers4_reshaped])
+    predictions = Concatenate(axis=2, name='predictions')([classes_softmax, corners7_reshaped, centers7_reshaped])
 
     model = Model(inputs=x, outputs=predictions)
 
