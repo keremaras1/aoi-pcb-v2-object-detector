@@ -284,7 +284,9 @@ class SSD_Data_Generator:
         assert version == '2' or version == '1', 'Dataset must be either 1 or 2 but instead the chosen type is {v}'.format(
             v=version)
 
-        while len(self.gt_list) < self.ic_count:
+        count = np.random.randint(max(0, self.ic_count - 2), self.ic_count + 2)
+
+        while len(self.gt_list) < count:
             self.place_ic(version=version)
 
         if version == '2':
