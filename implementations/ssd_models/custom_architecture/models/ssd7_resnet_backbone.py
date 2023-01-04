@@ -1,7 +1,7 @@
 import numpy as np
 from keras.models import Model
 from keras.layers import Input, Lambda, Conv2D, MaxPooling2D, BatchNormalization, ELU, Reshape, Concatenate, Activation, GaussianNoise
-from keras.applications import MobileNetV2, mobilenet_v2
+from keras.applications import MobileNetV2, mobilenet_v2, ResNet50V2, resnet_v2
 from keras.regularizers import l2
 import keras.backend as K
 
@@ -24,7 +24,7 @@ def resnet_build_model(image_size,
     # Build the network
     ####################################################################
     
-    backbone = MobileNetV2(include_top=False,
+    backbone = ResNet50V2(include_top=False,
                         weights='imagenet',
                         input_shape=(img_height, img_width, img_channels),
                         pooling=None)
@@ -33,7 +33,7 @@ def resnet_build_model(image_size,
     x = Input(shape=(img_height, img_width, img_channels))
     x = GaussianNoise(0.1)(x)
     
-    x = mobilenet_v2.preprocess_input(x)
+    x = resnet_v2.preprocess_input(x)
     x1 = backbone(x)
     # BASE NETWORK
 

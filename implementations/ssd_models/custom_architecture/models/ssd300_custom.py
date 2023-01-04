@@ -93,7 +93,7 @@ def ssd300_build_model(image_size,
     
     conv4_3_norm_mbox_conf = Conv2D(n_boxes * n_classes, (3, 3), padding='same', kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv4_3_norm_mbox_conf')(conv4_3_norm)
     
-    conv4_3_norm_mbox_loc = Conv2D(n_boxes * 4, (3, 3), padding='same', kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv4_3_norm_mbox_loc')(conv4_3_norm)
+    conv4_3_norm_mbox_loc = Conv2D(n_boxes * 8, (3, 3), padding='same', kernel_initializer='he_normal', kernel_regularizer=l2(l2_reg), name='conv4_3_norm_mbox_loc')(conv4_3_norm)
     
     conv4_3_norm_mbox_priorbox = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='conv4_3_norm_mbox_priorbox')(conv4_3_norm_mbox_loc)
     
