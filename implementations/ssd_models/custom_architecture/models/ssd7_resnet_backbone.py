@@ -42,12 +42,12 @@ def resnet_build_model(image_size,
     conv1 = BatchNormalization(axis=3, momentum=0.99, name='bn1')(
         conv1)  # Tensorflow uses filter format [filter_height, filter_width, in_channels, out_channels], hence axis = 3
     conv1 = ELU(name='elu1')(conv1)
-    pool1 = MaxPooling2D(pool_size=(2, 2), name='pool1')(conv1)
+    #pool1 = MaxPooling2D(pool_size=(2, 2), name='pool1')(conv1)
 
-    conv2 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                   kernel_regularizer=l2(l2_reg), name='conv2')(pool1)
-    conv2 = BatchNormalization(axis=3, momentum=0.99, name='bn2')(conv2)
-    conv2 = ELU(name='elu2')(conv2)
+    #conv2 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+    #               kernel_regularizer=l2(l2_reg), name='conv2')(pool1)
+    #conv2 = BatchNormalization(axis=3, momentum=0.99, name='bn2')(conv2)
+    #conv2 = ELU(name='elu2')(conv2)
     #pool2 = MaxPooling2D(pool_size=(2, 2), name='pool2')(conv2)
 
     #conv3 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
@@ -86,9 +86,9 @@ def resnet_build_model(image_size,
     ####################################################################
 
     classes4 = Conv2D(n_boxes * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                      kernel_regularizer=l2(l2_reg), name='classes4')(conv2)
+                      kernel_regularizer=l2(l2_reg), name='classes4')(conv1)
     boxes4 = Conv2D(n_boxes * 8, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                    kernel_regularizer=l2(l2_reg), name='boxes4')(conv2)
+                    kernel_regularizer=l2(l2_reg), name='boxes4')(conv1)
     centers4 = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='centers4')(boxes4)
 
     classes4_reshaped = Reshape((-1, n_classes), name='classes4_reshape')(classes4)

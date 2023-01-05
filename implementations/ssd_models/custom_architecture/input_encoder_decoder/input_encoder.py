@@ -60,13 +60,13 @@ class SSDInputEncoder:
             if ground_truth_labels[i].size == 0:
                 continue
 
-            labels = ground_truth_labels[i].astype(np.float)  # The labels for this batch item
+            labels = ground_truth_labels[i].astype(float)  # The labels for this batch item
 
             if self.normalize_coords:
                 labels[:, [tl_y, tr_y, bl_y, br_y, cy]] /= self.img_height
                 labels[:, [tl_x, tr_x, bl_x, br_x, cx]] /= self.img_width
 
-            classes_one_hot = class_vectors[labels[:, class_id].astype(np.int)]
+            classes_one_hot = class_vectors[labels[:, class_id].astype(int)]
             labels_one_hot = np.concatenate(
                 [classes_one_hot, labels[:, [tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y]]], axis=-1)
 
