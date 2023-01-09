@@ -1,20 +1,24 @@
 import tensorflow as tf
 
 
-def custom_mse(y_true, y_pred):
+def offset_MAE(y_true, y_pred):
     
-    batch_size = tf.shape(y_pred)[0]
-    n_boxes = tf.shape(y_pred)[1]
-
-    positives = tf.cast(tf.reduce_max(y_true[:, :, 1:-10], axis=-1), dtype=tf.float64)
-    n_positive = tf.cast(tf.math.count_nonzero(positives), dtype=tf.float64)
-
-    mse_per_center = tf.cast(tf.reduce_mean((y_true[:, :, -10:-2] - y_pred[:, :, -10:-2])**2, axis=-1)**2, dtype=tf.float64)
+    pred_offsets = y_pred[:, :, -10:-2]
+    true_offsets = y_true[:, :, -10:-2]
     
-    mse_per_batch = tf.reduce_sum(mse_per_center * positives) / tf.cast(n_positive, dtype=tf.float64)
-    mse_per_batch = mse_per_batch * tf.cast(batch_size, dtype=tf.float64)
+    class_true = tf.cast(tf.argmax(y_true[:, :, :-10], axis=-1), dtype=tf.float32)
+    
+    positive_true_idx = tf.where(tf.not_equal(class_true, 0.0))
+    
+    filtered_pred_offsets = tf.gather(pred_offsets, positive_true_idx, axis=1)
+    positive_true_offsets = tf.gather(true_offsets, positive_true_idx, axis=1)
+    
+    absolute_error = tf.abs(positive_true_offsets - filtered_pred_offsets)
+    
+    mean_absolute_error = tf.reduce_mean(absolute_error)
+    
+    return mean_absolute_error
 
-    return mse_per_batch
 
 def class_mAP(y_true, y_pred):
     
