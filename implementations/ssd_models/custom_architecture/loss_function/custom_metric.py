@@ -6,16 +6,19 @@ def offset_MAE(y_true, y_pred):
     pred_offsets = y_pred[:, :, -10:-2]
     true_offsets = y_true[:, :, -10:-2]
     
-    class_true = tf.cast(tf.argmax(y_true[:, :, :-10], axis=-1), dtype=tf.float32)
+    absolute_error = tf.abs(true_offsets - pred_offsets)
+    absolute_error_2d = tf.reshape(absolute_error, (-1, tf.shape(absolute_error)[-1]))
+    
+    y_true_2d = tf.reshape(y_true, (-1, tf.shape(y_true)[-1]))
+    
+    class_true = tf.cast(tf.argmax(y_true_2d[:, :-10], axis=-1), dtype=tf.float32)
     
     positive_true_idx = tf.where(tf.not_equal(class_true, 0.0))
+    positive_true_idx_1d = tf.reshape(positive_true_idx, [-1])
     
-    filtered_pred_offsets = tf.gather(pred_offsets, positive_true_idx, axis=1)
-    positive_true_offsets = tf.gather(true_offsets, positive_true_idx, axis=1)
+    filtered_absolute_error = tf.gather(absolute_error_2d, positive_true_idx_1d)
     
-    absolute_error = tf.abs(positive_true_offsets - filtered_pred_offsets)
-    
-    mean_absolute_error = tf.reduce_mean(absolute_error)
+    mean_absolute_error = tf.reduce_mean(filtered_absolute_error)
     
     return mean_absolute_error
 
