@@ -200,16 +200,19 @@ class pcb_dataset_generator:
         img = Image.open(img_path)
         width, height = img.size
 
+        crop_ratios_list = np.linspace(0.3, 0.7, num=5, endpoint=True)
+        crop_ratio = random.choice(crop_ratios_list)
+
         xmin = np.random.randint(0, width)
         ymin = np.random.randint(0, height)
-        xmax = min(width, int(xmin + 0.4 * width))
-        ymax = min(height, int(ymin + 0.4 * width))
+        xmax = min(width, int(xmin + crop_ratio * width))
+        ymax = min(height, int(ymin + crop_ratio * width))
 
         while (xmax - xmin) / (ymax - ymin) != 1:
             xmin = np.random.randint(0, width)
             ymin = np.random.randint(0, height)
-            xmax = min(width, int(xmin + 0.7 * width))
-            ymax = min(height, int(ymin + 0.7 * width))
+            xmax = min(width, int(xmin + crop_ratio * width))
+            ymax = min(height, int(ymin + crop_ratio * width))
 
         bounds = np.array([xmin, ymin, xmax, ymax])
         parent_dir, img_name = os.path.split(img_path)
