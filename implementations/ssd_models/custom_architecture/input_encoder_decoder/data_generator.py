@@ -1,16 +1,17 @@
-import csv
 import numpy as np
 import pandas as pd
 from PIL import Image
 import re
 import os
 from tqdm import tqdm
+from PIL import Image, ImageDraw
 
 from input_encoder_decoder.input_encoder import SSDInputEncoder
+from input_encoder_decoder.data_augmentation_chain import DataAugmentationChain
 
 
 class DataGenerator:
-    def __init__(self, parent_dir, encoder):
+    def __init__(self, parent_dir, encoder, augmentation=True, probability=0.5):
         self.parent_dir = parent_dir
         self.encoder = encoder
         self.img_filenames = []
@@ -18,6 +19,8 @@ class DataGenerator:
         self.X = []
         self.y = []
         self.y_encoded = []
+        self.augmentation = True
+        self.probability = probability
 
     def sort_alphanumeric(self):
         convert = lambda text: int(text) if text.isdigit() else text.lower()
@@ -53,12 +56,34 @@ class DataGenerator:
 
     def generate_y(self):
         self.parse_csv('labels.csv')
+        self.augment_data()
         self.y_encoded = self.encoder(self.y)
         print('Encoded labels:')
         print(self.y_encoded.shape)
 
+    def augment_data(self):
+        print('Augmenting images and relabeling...')
+        augmentator = DataAugmentationChain(self.X, self.y, probability=self.probability)
+        self.X, self.y = augmentator()
+
     def get_data(self):
-        print('Generating image arrays and encoding labels:')
+        print('Generating image arrays and encoding labels...')
         self.img_to_np()
         self.generate_y()
         return self.X, self.y_encoded
+
+
+if __name__ == "__main__":
+    print("Data generator is running as __main__!!!")
+    encoder = SSDInputEncoder(img_height=300,
+                              img_width=300,
+                              n_classes=1,
+                              predictor_sizes=[(10, 10)],
+                              normalize_coords=True,
+                              background_id=0)
+
+    generator = DataGenerator(parent_dir='/home/kerem/AOI_Project/Datasets/real_pcb_crop', encoder=encoder)
+
+    X, y = generator.get_data()
+    print(X.shape)
+    print(y.shape)

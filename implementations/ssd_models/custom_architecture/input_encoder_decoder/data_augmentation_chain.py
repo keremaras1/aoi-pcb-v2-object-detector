@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 import random
 import cv2
+from tqdm import tqdm
 
 
 class DataAugmentationChain:
@@ -14,8 +15,8 @@ class DataAugmentationChain:
         self.probability = probability
 
     def __call__(self, *args, **kwargs):
-
-        for i in range(len(self.X)):
+        print('Applying randomized augmentation...')
+        for i in tqdm(range(len(self.X))):
             self.X[i], self.y[i] = self.vertical_flip(self.X[i], self.y[i])
             self.X[i], self.y[i] = self.horizontal_flip(self.X[i], self.y[i])
             self.X[i], self.y[i] = self.perpendicular_rotate(self.X[i], self.y[i])
@@ -79,31 +80,31 @@ class DataAugmentationChain:
 
         return rotated_img, label
 
-    def random_brightness(self, image, label, min_delta=-32, max_delta=32):
+    def random_brightness(self, image, label, min_delta=-75, max_delta=75):
         decision = random.random() < self.probability
 
         if not decision:
             return image, label
 
-        img = image.copy()
+        img = image.copy().astype(float)
         d = random.uniform(min_delta, max_delta)
         img += d
         img = np.clip(img, 0, 255)
 
-        return img, label
+        return np.uint8(img), label
 
-    def random_contrast(self, image, label, min_delta=0.5, max_delta=1.5):
+    def random_contrast(self, image, label, min_delta=0.5, max_delta=1.8):
         decision = random.random() < self.probability
 
         if not decision:
             return image, label
 
-        img = np.copy(image)
+        img = np.copy(image).astype(float)
         d = random.uniform(min_delta, max_delta)
         img *= d
         img = np.clip(img, 0, 255)
 
-        return img, label
+        return np.uint8(img), label
 
     def random_hue(self, image, label, min_delta=-18, max_delta=18):
         decision = random.random() < self.probability
@@ -112,14 +113,14 @@ class DataAugmentationChain:
             return image, label
 
         img = cv2.cvtColor(np.uint8(image), cv2.COLOR_RGB2HSV)
-        img = np.array(img)
+        img = np.array(img).astype(float)
         d = random.uniform(min_delta, max_delta)
         img[:, :, 0] += d
         img = np.clip(img, 0, 360)
         img = cv2.cvtColor(np.uint8(img), cv2.COLOR_HSV2RGB)
         img = np.array(img)
 
-        return img, label
+        return np.uint8(img), label
 
     def random_lighting_noise(self, image, label):
         decision = random.random() < self.probability
