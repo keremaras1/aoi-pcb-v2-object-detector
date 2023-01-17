@@ -22,8 +22,8 @@ class DataAugmentationChain:
             self.X[i], self.y[i] = self.perpendicular_rotate(self.X[i], self.y[i])
             self.X[i], self.y[i] = self.random_brightness(self.X[i], self.y[i])
             self.X[i], self.y[i] = self.random_contrast(self.X[i], self.y[i])
-            self.X[i], self.y[i] = self.random_hue(self.X[i], self.y[i])
-            self.X[i], self.y[i] = self.random_lighting_noise(self.X[i], self.y[i])
+            #self.X[i], self.y[i] = self.random_hue(self.X[i], self.y[i])
+            #self.X[i], self.y[i] = self.random_lighting_noise(self.X[i], self.y[i])
 
         return self.X, self.y
 
@@ -80,7 +80,7 @@ class DataAugmentationChain:
 
         return rotated_img, label
 
-    def random_brightness(self, image, label, min_delta=-75, max_delta=75):
+    def random_brightness(self, image, label, min_delta=-50, max_delta=50):
         decision = random.random() < self.probability
 
         if not decision:

@@ -56,7 +56,8 @@ class DataGenerator:
 
     def generate_y(self):
         self.parse_csv('labels.csv')
-        self.augment_data()
+        if self.augmentation:
+            self.augment_data()
         self.y_encoded = self.encoder(self.y)
         print('Encoded labels:')
         print(self.y_encoded.shape)

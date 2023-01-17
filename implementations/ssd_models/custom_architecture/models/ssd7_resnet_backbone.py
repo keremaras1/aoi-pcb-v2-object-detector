@@ -85,25 +85,25 @@ def resnet_build_model(image_size,
     
     ####################################################################
 
-    classes4 = Conv2D(n_boxes * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                      kernel_regularizer=l2(l2_reg), name='classes4')(conv1)
-    boxes4 = Conv2D(n_boxes * 8, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                    kernel_regularizer=l2(l2_reg), name='boxes4')(conv1)
-    centers4 = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='centers4')(boxes4)
+    classes1 = Conv2D(n_boxes * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+                      kernel_regularizer=l2(l2_reg), name='classes1')(conv1)
+    offsets1 = Conv2D(n_boxes * 8, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+                    kernel_regularizer=l2(l2_reg), name='offsets1')(conv1)
+    centers1 = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='centers1')(offsets1)
 
-    classes4_reshaped = Reshape((-1, n_classes), name='classes4_reshape')(classes4)
-    boxes4_reshaped = Reshape((-1, 8), name='boxes4_reshape')(boxes4)
-    centers4_reshaped = Reshape((-1, 2), name='anchors4_reshape')(centers4)
+    classes1_reshaped = Reshape((-1, n_classes), name='classes1_reshape')(classes1)
+    offsets1_reshaped = Reshape((-1, 8), name='offsets1_reshape')(offsets1)
+    centers1_reshaped = Reshape((-1, 2), name='anchors4_reshape')(centers1)
 
-    classes_softmax = Activation('softmax', name='classes_softmax')(classes4_reshaped)
+    classes_softmax = Activation('softmax', name='classes_softmax')(classes1_reshaped)
 
-    predictions = Concatenate(axis=2, name='predictions')([classes_softmax, boxes4_reshaped, centers4_reshaped])
+    predictions = Concatenate(axis=2, name='predictions')([classes_softmax, offsets1_reshaped, centers1_reshaped])
 
     model = Model(inputs=x, outputs=predictions)
 
     if return_predictor_sizes:
         # The spatial dimensions are the same for the `classes` and `boxes` predictor layers.
-        predictor_sizes = np.array([classes4._keras_shape[1:3]])
+        predictor_sizes = np.array([classes1._keras_shape[1:3]])
         return model, predictor_sizes
     else:
         return model
