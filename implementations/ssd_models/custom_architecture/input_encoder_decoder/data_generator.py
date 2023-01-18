@@ -19,7 +19,7 @@ class DataGenerator:
         self.X = []
         self.y = []
         self.y_encoded = []
-        self.augmentation = True
+        self.augmentation = augmentation
         self.probability = probability
 
     def sort_alphanumeric(self):

@@ -153,7 +153,7 @@ class pcb_dataset_generator:
         frame = np.full(corners.shape[0], image_name).tolist()
 
         img_df.insert(0, 'frame', frame, True)
-        img_df.insert(len(img_df), 'class_id', class_id, True)
+        img_df.insert(len(img_df.axes[1]), 'class_id', class_id, True)
 
         self.labels = pd.concat([self.labels, img_df])
 
@@ -242,7 +242,7 @@ class pcb_dataset_generator:
         frame = np.full(new_valid_corners.shape[0], crop_name).tolist()
 
         crop_label_df.insert(0, 'frame', frame, True)
-        crop_label_df.insert(len(crop_label_df), 'class_id', class_id, True)
+        crop_label_df.insert(len(crop_label_df.axes[1]), 'class_id', class_id, True)
 
         self.crop_labels = pd.concat([self.crop_labels, crop_label_df])
 

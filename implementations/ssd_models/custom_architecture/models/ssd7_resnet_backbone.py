@@ -44,10 +44,10 @@ def resnet_build_model(image_size,
     conv1 = ELU(name='elu1')(conv1)
     #pool1 = MaxPooling2D(pool_size=(2, 2), name='pool1')(conv1)
 
-    #conv2 = Conv2D(48, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-    #               kernel_regularizer=l2(l2_reg), name='conv2')(pool1)
-    #conv2 = BatchNormalization(axis=3, momentum=0.99, name='bn2')(conv2)
-    #conv2 = ELU(name='elu2')(conv2)
+    conv2 = Conv2D(32, (5, 5), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+                   kernel_regularizer=l2(l2_reg), name='conv2')(x1)
+    conv2 = BatchNormalization(axis=3, momentum=0.99, name='bn2')(conv2)
+    conv2 = ELU(name='elu2')(conv2)
     #pool2 = MaxPooling2D(pool_size=(2, 2), name='pool2')(conv2)
 
     #conv3 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
@@ -88,12 +88,12 @@ def resnet_build_model(image_size,
     classes1 = Conv2D(n_boxes * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
                       kernel_regularizer=l2(l2_reg), name='classes1')(conv1)
     offsets1 = Conv2D(n_boxes * 8, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                    kernel_regularizer=l2(l2_reg), name='offsets1')(conv1)
+                    kernel_regularizer=l2(l2_reg), name='offsets1')(conv2)
     centers1 = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='centers1')(offsets1)
 
     classes1_reshaped = Reshape((-1, n_classes), name='classes1_reshape')(classes1)
     offsets1_reshaped = Reshape((-1, 8), name='offsets1_reshape')(offsets1)
-    centers1_reshaped = Reshape((-1, 2), name='anchors4_reshape')(centers1)
+    centers1_reshaped = Reshape((-1, 2), name='centers1_reshape')(centers1)
 
     classes_softmax = Activation('softmax', name='classes_softmax')(classes1_reshaped)
 
