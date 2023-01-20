@@ -12,7 +12,7 @@ from PIL import Image
 
 
 def image_resize(img, save_path, size):
-    img1 = img.resize(size)
+    img1 = img.resize(size, resample=Image.BICUBIC)
     img1.save(save_path)
 
 
@@ -231,7 +231,7 @@ class pcb_dataset_generator:
         new_valid_corners = get_new_coords_for_crop(xmin, ymin, valid_corners)
 
         if self.img_size not in [crop_width, crop_height]:
-            crop_img = crop_img.resize((self.img_size, self.img_size))
+            crop_img = crop_img.resize((self.img_size, self.img_size), resample=Image.BICUBIC)
             new_valid_corners = self.resize_coords(crop_width, crop_height, new_valid_corners)
 
         crop_label_df = pd.DataFrame(new_valid_corners,
