@@ -200,7 +200,7 @@ class pcb_dataset_generator:
         img = Image.open(img_path)
         width, height = img.size
 
-        crop_ratios_list = np.linspace(0.3, 0.7, num=5, endpoint=True)
+        crop_ratios_list = np.linspace(0.1, 0.9, num=5, endpoint=True)
         crop_ratio = np.random.choice(crop_ratios_list)
 
         xmin = np.random.randint(0, width)

@@ -13,17 +13,26 @@ class DataAugmentationChain:
         self.X = image_array
         self.y = unencoded_label_array
         self.probability = probability
+        self.alternatives = [0, 1, 2]
 
     def __call__(self, *args, **kwargs):
         print('Applying randomized augmentation...')
         for i in tqdm(range(len(self.X))):
+            
+            choice = random.choice(self.alternatives)
+            
             self.X[i], self.y[i] = self.vertical_flip(self.X[i], self.y[i])
             self.X[i], self.y[i] = self.horizontal_flip(self.X[i], self.y[i])
             self.X[i], self.y[i] = self.perpendicular_rotate(self.X[i], self.y[i])
-            self.X[i], self.y[i] = self.random_brightness(self.X[i], self.y[i])
-            self.X[i], self.y[i] = self.random_contrast(self.X[i], self.y[i])
-            #self.X[i], self.y[i] = self.random_hue(self.X[i], self.y[i])
-            #self.X[i], self.y[i] = self.random_lighting_noise(self.X[i], self.y[i])
+            
+            if choice == 0:
+                self.X[i], self.y[i] = self.random_brightness(self.X[i], self.y[i])
+            elif choice == 1:
+                self.X[i], self.y[i] = self.random_contrast(self.X[i], self.y[i])
+            elif choice == 2:
+                self.X[i], self.y[i] = self.random_lighting_noise(self.X[i], self.y[i])
+            #elif choice == 3:
+            #    self.X[i], self.y[i] = self.random_hue(self.X[i], self.y[i])
 
         return self.X, self.y
 
@@ -93,7 +102,7 @@ class DataAugmentationChain:
 
         return np.uint8(img), label
 
-    def random_contrast(self, image, label, min_delta=0.5, max_delta=1.8):
+    def random_contrast(self, image, label, min_delta=0.5, max_delta=1.5):
         decision = random.random() < self.probability
 
         if not decision:
