@@ -44,10 +44,10 @@ def build_model(image_size,
     ####################################################################
 
     x = Input(shape=(img_height, img_width, img_channels))
-    x = GaussianNoise(0.1)(x)
 
     # The following identity layer is only needed so that the subsequent lambda layers can be optional.
     x1 = Lambda(identity_layer, output_shape=(img_height, img_width, img_channels), name='identity_layer')(x)
+    
     if not (subtract_mean is None):
         x1 = Lambda(input_mean_normalization, output_shape=(img_height, img_width, img_channels),
                     name='input_mean_normalization')(x1)
@@ -59,7 +59,8 @@ def build_model(image_size,
             x1)
 
     # BASE NETWORK
-
+    x1 = GaussianNoise(0.1)(x1)
+    
     conv1 = Conv2D(32, (5, 5), strides=(1, 1), padding="same", kernel_initializer='he_normal',
                    kernel_regularizer=l2(l2_reg), name='conv1')(x1)
     conv1 = BatchNormalization(axis=3, momentum=0.99, name='bn1')(
