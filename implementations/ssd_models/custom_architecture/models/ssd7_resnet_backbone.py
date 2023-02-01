@@ -1,6 +1,6 @@
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Lambda, Conv2D, MaxPooling2D, BatchNormalization, ELU, Reshape, Concatenate, Activation, GaussianNoise
+from keras.layers import Input, Lambda, Conv2D, MaxPooling2D, BatchNormalization, ReLU, ELU, Reshape, Concatenate, Activation, GaussianNoise
 from keras.applications import MobileNetV2, mobilenet_v2, ResNet50V2, resnet_v2, InceptionResNetV2, inception_resnet_v2, VGG16, vgg16, VGG19, vgg19, InceptionV3, inception_v3
 from keras.regularizers import l2
 import keras.backend as K
@@ -31,31 +31,29 @@ def resnet_build_model(image_size,
     backbone.trainable = False
 
     x = Input(shape=(img_height, img_width, img_channels))
-    x = GaussianNoise(0.1)(x)
     
-    x = vgg16.preprocess_input(x)
-    x1 = backbone(x)
+    x1 = vgg16.preprocess_input(x)
+    x1 = GaussianNoise(0.1)(x1)
+    x1 = backbone(x1)
     # BASE NETWORK
-    x1 = BatchNormalization(axis=3, momentum=0.99, name='bn0')(x1)
-    x1 = ELU(name='elu0')(x1)
     
-    conv1 = Conv2D(1024, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+    conv1 = Conv2D(512, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
                    kernel_regularizer=l2(l2_reg), name='conv1')(x1)
     conv1 = BatchNormalization(axis=3, momentum=0.99, name='bn1')(
         conv1)  # Tensorflow uses filter format [filter_height, filter_width, in_channels, out_channels], hence axis = 3
-    conv1 = ELU(name='elu1')(conv1)
+    conv1 = ReLU(name='relu1')(conv1)
     #pool1 = MaxPooling2D(pool_size=(2, 2), name='pool1')(conv1)
 
-    conv2 = Conv2D(1024, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                   kernel_regularizer=l2(l2_reg), name='conv2')(conv1)
-    conv2 = BatchNormalization(axis=3, momentum=0.99, name='bn2')(conv2)
-    conv2 = ELU(name='elu2')(conv2)
+    #conv2 = Conv2D(1024, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+    #              kernel_regularizer=l2(l2_reg), name='conv2')(conv1)
+    #conv2 = BatchNormalization(axis=3, momentum=0.99, name='bn2')(conv2)
+    #conv2 = ReLU(name='relu2')(conv2)
     #pool2 = MaxPooling2D(pool_size=(2, 2), name='pool2')(conv2)
 
-    conv3 = Conv2D(1024, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                   kernel_regularizer=l2(l2_reg), name='conv3')(conv2)
-    conv3 = BatchNormalization(axis=3, momentum=0.99, name='bn3')(conv3)
-    conv3 = ELU(name='elu3')(conv3)
+    #conv3 = Conv2D(1024, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
+    #               kernel_regularizer=l2(l2_reg), name='conv3')(conv2)
+    #conv3 = BatchNormalization(axis=3, momentum=0.99, name='bn3')(conv3)
+    #conv3 = ReLU(name='relu3')(conv3)
     #pool3 = MaxPooling2D(pool_size=(2, 2), name='pool3')(conv3)
 
     #conv4 = Conv2D(64, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
@@ -88,9 +86,9 @@ def resnet_build_model(image_size,
     ####################################################################
 
     classes1 = Conv2D(n_boxes * n_classes, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                      kernel_regularizer=l2(l2_reg), name='classes1')(conv3)
+                      kernel_regularizer=l2(l2_reg), name='classes1')(conv1)
     offsets1 = Conv2D(n_boxes * 8, (3, 3), strides=(1, 1), padding="same", kernel_initializer='he_normal',
-                    kernel_regularizer=l2(l2_reg), name='offsets1')(conv3)
+                    kernel_regularizer=l2(l2_reg), name='offsets1')(conv1)
     centers1 = GridCenters(img_height, img_width, normalize_coords=normalize_coords, name='centers1')(offsets1)
 
     classes1_reshaped = Reshape((-1, n_classes), name='classes1_reshape')(classes1)
