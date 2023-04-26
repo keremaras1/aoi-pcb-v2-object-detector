@@ -24,15 +24,16 @@ def resnet_build_model(image_size,
     # Build the network
     ####################################################################
     
-    backbone = VGG16(include_top=False,
+    backbone = MobileNetV2(include_top=False,
                         weights='imagenet',
                         input_shape=(img_height, img_width, img_channels),
                         pooling=None)
+    
     backbone.trainable = False
 
     x = Input(shape=(img_height, img_width, img_channels))
     
-    x1 = vgg16.preprocess_input(x)
+    x1 = mobilenet_v2.preprocess_input(x)
     x1 = GaussianNoise(0.1)(x1)
     x1 = backbone(x1)
     # BASE NETWORK
