@@ -9,20 +9,23 @@ class DataAugmentationChain:
     def __init__(self,
                  image_array,
                  unencoded_label_array,
-                 probability):
+                 probability,
+                 seed):
         self.X = image_array
         self.y = unencoded_label_array
         self.probability = probability
+        self.seed = seed
         self.alternatives = [0, 1, 2, 3, 4, 5]
 
     def __call__(self, *args, **kwargs):
         print('Applying randomized augmentation...')
+        random.seed(self.seed)
         for i in tqdm(range(len(self.X))):
-            
+
             choice = random.choice(self.alternatives)
-            
+
             # self.X[i], self.y[i] = self.random_hue(self.X[i], self.y[i])
-            
+
             if choice == 0:
                 self.X[i], self.y[i] = self.random_brightness(self.X[i], self.y[i])
             elif choice == 1:
@@ -35,7 +38,6 @@ class DataAugmentationChain:
                 self.X[i], self.y[i] = self.horizontal_flip(self.X[i], self.y[i])
             elif choice == 5:
                 self.X[i], self.y[i] = self.perpendicular_rotate(self.X[i], self.y[i])
-            
 
         return self.X, self.y
 
@@ -66,57 +68,54 @@ class DataAugmentationChain:
     def perpendicular_rotate(self, image, label):
         decision = random.random() < self.probability
 
-        if not decision:
-            return image, label
+        if decision:
+            angle_list = [90, 180, 270]
+            angle = random.choice(angle_list)
 
-        angel_list = [90, 180, 270]
-        angle = random.choice(angel_list)
-
-        img = Image.fromarray(image)
-        rotated_img = img.rotate(angle)
-        rotated_img = np.array(rotated_img)
-
-        rotated_height, rotated_width, _ = rotated_img.shape
-
-        for i in range(label.shape[0]):
-            coords_2d = np.reshape(label[i, -10:], (-1, 2))
             if angle == 90:
-                rotated_coords = np.array([coords_2d[:, 1], rotated_width - coords_2d[:, 0]]).T
+                image = np.rot90(image, k=1, axes=(0, 1))
             elif angle == 180:
-                rotated_coords = np.array([rotated_height - coords_2d[:, 0], rotated_width - coords_2d[:, 1]]).T
+                image = np.rot90(image, k=2, axes=(0, 1))
             elif angle == 270:
-                rotated_coords = np.array([rotated_width - coords_2d[:, 1], coords_2d[:, 0]]).T
+                image = np.rot90(image, k=3, axes=(0, 1))
 
-            coords = np.reshape(rotated_coords, label[i, -10:].shape)
-            label[i, -10:] = coords
+            rotated_height, rotated_width, _ = image.shape
 
-        return rotated_img, label
+            for i in range(label.shape[0]):
+                coords_2d = np.reshape(label[i, -10:], (-1, 2))
+                if angle == 90:
+                    rotated_coords = np.array([coords_2d[:, 1], rotated_width - coords_2d[:, 0]]).T
+                elif angle == 180:
+                    rotated_coords = np.array([rotated_height - coords_2d[:, 0], rotated_width - coords_2d[:, 1]]).T
+                elif angle == 270:
+                    rotated_coords = np.array([rotated_width - coords_2d[:, 1], coords_2d[:, 0]]).T
+
+                coords = np.reshape(rotated_coords, label[i, -10:].shape)
+                label[i, -10:] = coords
+
+        return image, label
 
     def random_brightness(self, image, label, min_delta=-50, max_delta=50):
         decision = random.random() < self.probability
 
-        if not decision:
-            return image, label
+        if decision:
+            d = random.uniform(min_delta, max_delta)
+            image = image.astype(float)
+            image += d
+            image = np.clip(image, 0, 255).astype(np.uint8)
 
-        img = image.copy().astype(float)
-        d = random.uniform(min_delta, max_delta)
-        img += d
-        img = np.clip(img, 0, 255)
-
-        return np.uint8(img), label
+        return image, label
 
     def random_contrast(self, image, label, min_delta=0.5, max_delta=1.5):
         decision = random.random() < self.probability
 
-        if not decision:
-            return image, label
+        if decision:
+            d = random.uniform(min_delta, max_delta)
+            image = image.astype(float)
+            image *= d
+            image = np.clip(image, 0, 255).astype(np.uint8)
 
-        img = np.copy(image).astype(float)
-        d = random.uniform(min_delta, max_delta)
-        img *= d
-        img = np.clip(img, 0, 255)
-
-        return np.uint8(img), label
+        return image, label
 
     def random_hue(self, image, label, min_delta=-18, max_delta=18):
         decision = random.random() < self.probability

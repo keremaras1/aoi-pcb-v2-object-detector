@@ -6,7 +6,7 @@ import os
 from tqdm import tqdm
 from PIL import Image, ImageDraw
 
-from input_encoder_decoder.input_encoder import SSDInputEncoder
+from input_encoder_decoder.input_encoder_new import SSDInputEncoder
 from input_encoder_decoder.data_augmentation_chain import DataAugmentationChain
 
 
@@ -64,7 +64,7 @@ class DataGenerator:
 
     def augment_data(self):
         print('Augmenting images and relabeling...')
-        augmentator = DataAugmentationChain(self.X, self.y, probability=self.probability)
+        augmentator = DataAugmentationChain(self.X, self.y, probability=self.probability, seed=42)
         self.X, self.y = augmentator()
 
     def get_data(self):

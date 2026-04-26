@@ -1,8 +1,8 @@
 import numpy as np
-from keras.models import Model
-from keras.layers import Input, Lambda, Conv2D, MaxPooling2D, BatchNormalization, ReLU, ELU, Reshape, Concatenate, Activation, GaussianNoise
-from keras.regularizers import l2
-import keras.backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Lambda, Conv2D, MaxPooling2D, BatchNormalization, ReLU, ELU, Reshape, Concatenate, Activation, GaussianNoise
+from tensorflow.keras.regularizers import l2
+import tensorflow.keras.backend as K
 
 from custom_layers.GridCenters import GridCenters
 
@@ -124,7 +124,7 @@ def build_model(image_size,
 
     if return_predictor_sizes:
         # The spatial dimensions are the same for the `classes` and `boxes` predictor layers.
-        predictor_sizes = np.array([classes4._keras_shape[1:3]])
+        predictor_sizes = np.array([classes7._keras_shape[1:3]])
         return model, predictor_sizes
     else:
         return model

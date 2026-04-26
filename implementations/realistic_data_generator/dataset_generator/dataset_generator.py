@@ -116,12 +116,35 @@ class pcb_dataset_generator:
                 self.template_object_list.append(t_object)
 
     def get_rotation(self):
-        return np.random.normal(0, self.rotation_range)
+        mu = 0
+        sigma = 1
+        random_value = np.random.normal(mu, sigma)
+
+        min_value = -self.rotation_range  # Minimum value in your desired range
+        max_value = self.rotation_range  # Maximum value in your desired range
+
+        mapped_value = min_value + (max_value - min_value) * (random_value - mu) / (2 * sigma)
+        return mapped_value
 
     def get_ic_placement(self, cx, cy, rotated_ic_cutout):
         width, height = rotated_ic_cutout.size
-        offset_x = np.random.randint(-self.offsets[0], self.offsets[0])
-        offset_y = np.random.randint(-self.offsets[1], self.offsets[1])
+
+        mu = 0
+        sigma = 1
+        gauss_x = np.random.normal(mu, sigma)
+        gauss_y = np.random.normal(mu, sigma)
+
+        min_x = -self.offsets[0]
+        max_x = self.offsets[0]
+
+        min_y = -self.offsets[1]
+        max_y = self.offsets[1]
+
+        mapped_x = min_x + (max_x - min_x) * (gauss_x - mu) / (2 * sigma)
+        mapped_y = min_y + (max_y - min_y) * (gauss_y - mu) / (2 * sigma)
+
+        offset_x = round(mapped_x)
+        offset_y = round(mapped_y)
 
         placement_x = int(cx - width / 2)
         placement_y = int(cy - height / 2)
