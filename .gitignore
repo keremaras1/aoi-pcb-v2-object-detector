@@ -1,0 +1,35 @@
+# Model artefacts — use GitHub Releases or external storage
+*.h5
+*.ckpt
+*.pb
+saved_model/
+saved_trained_models*/
+variables/
+checkpoints/
+model_realistic_pcb*/
+
+# Experiment tracking
+wandb/
+mlruns/
+*.wandb
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated dataset caches
+self_generated_*.h5
