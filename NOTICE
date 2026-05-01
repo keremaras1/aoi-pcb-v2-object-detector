@@ -1,0 +1,39 @@
+Automated Optical Inspection for PCBA Quality Control
+Copyright 2024 Kerem Aras
+
+This product includes software developed by Pierluigi Ferrari
+(https://github.com/pierluigiferrari/ssd_keras), released under the
+Apache License, Version 2.0. Copyright 2018 Pierluigi Ferrari.
+
+Portions of this repository are derived from that work, including:
+
+  - src/aoi_pcb_ssd/model/ssd_custom.py
+  - src/aoi_pcb_ssd/model/ssd_transfer.py
+    Derived from upstream models/keras_ssd7.py.
+    The feature extractor, three-branch detection head (classification,
+    corner-offset regression, grid-centre encoding), and overall model
+    structure are modifications introduced for this work. The custom CNN
+    backbone (6 convolutional blocks, 5x5 kernels in the first two blocks)
+    and the use of grid-centre anchors instead of aspect-ratio bounding
+    boxes are original contributions described in the accompanying paper.
+
+  - src/aoi_pcb_ssd/model/loss.py
+    Derived from upstream keras_loss_function/keras_ssd_loss.py.
+    Adapted for TensorFlow 2. The localization loss is replaced with a
+    custom L1/L2 hybrid and the regression target is an eight-coordinate
+    four-corner-point representation rather than the standard (cx, cy, w, h)
+    bounding box format.
+
+  - src/aoi_pcb_ssd/encoding/input_encoder.py
+  - src/aoi_pcb_ssd/encoding/output_decoder.py
+    Derived from upstream ssd_encoder_decoder/ssd_input_encoder.py and
+    ssd_output_decoder.py respectively.
+    Matching strategy changed from IoU-based to nearest-centre distance.
+    Regression targets encode four corner points per object instead of
+    bounding box offsets.
+
+  - src/aoi_pcb_ssd/model/grid_centers.py
+    Derived from upstream keras_layers/keras_layer_AnchorBoxes.py.
+    Produces only the (cx, cy) centre coordinates of each feature map cell,
+    omitting the width, height, and variance fields of the original anchor
+    box layer.
