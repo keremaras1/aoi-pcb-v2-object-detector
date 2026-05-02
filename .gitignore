@@ -33,3 +33,19 @@ Thumbs.db
 
 # Generated dataset caches
 self_generated_*.h5
+
+# Training run outputs
+experiments/
+datasets/
+*.keras
+
+# Build artefacts
+dist/
+*.egg-info/
+
+# Test coverage
+.coverage
+htmlcov/
+
+# Local Python version override
+.python-version
