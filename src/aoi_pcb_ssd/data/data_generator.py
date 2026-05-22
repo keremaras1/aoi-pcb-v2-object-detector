@@ -10,7 +10,10 @@ injected ``SSDInputEncoder`` instance.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from aoi_pcb_ssd.encoding.input_encoder import SSDInputEncoder
 
 import numpy as np
 from numpy.typing import NDArray
