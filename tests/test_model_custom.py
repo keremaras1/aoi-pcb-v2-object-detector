@@ -20,17 +20,24 @@ def model() -> tf.keras.Model:
 
 class TestModelOutputShape:
     def test_output_shape(self, model: tf.keras.Model) -> None:
+        # Given: the pre-built custom model.
+        # When: a batch of 2 images is passed through.
         y = model(tf.random.normal((2, *_IMAGE_SIZE)), training=False)
+        # Then: output is (batch, 64, 12) — 8×8 grid, 12 values per cell.
         assert tuple(y.shape) == (2, *_OUTPUT_SHAPE)
 
     def test_output_shape_batch_1(self, model: tf.keras.Model) -> None:
+        # Given/When: a single image.
         y = model(tf.random.normal((1, *_IMAGE_SIZE)), training=False)
+        # Then: batch dimension is preserved correctly.
         assert tuple(y.shape) == (1, *_OUTPUT_SHAPE)
 
     def test_predictor_sizes_is_single_8x8_map(self) -> None:
+        # Given/When: the model is built with return_predictor_sizes=True.
         _, predictor_sizes = build_custom_model(
             _IMAGE_SIZE, n_classes=_N_CLASSES, return_predictor_sizes=True
         )
+        # Then: one 8×8 predictor layer (Section IV.B — 256px → 5 max-pools).
         assert predictor_sizes.tolist() == [[8, 8]]
 
 
@@ -38,15 +45,20 @@ class TestPaperArchitecture:
     """The built graph must reflect the feature extractor described in Figure 3."""
 
     def test_first_two_blocks_use_wide_kernels(self, model: tf.keras.Model) -> None:
-        # Paper Section IV.B: (5x5) kernels in blocks 1-2 for a wider receptive field.
+        # Given: the custom model.
+        # Then: conv1 and conv2 have (5×5) kernels — §IV.B citing [29].
         assert model.get_layer("conv1").kernel_size == (5, 5)
         assert model.get_layer("conv2").kernel_size == (5, 5)
 
     def test_remaining_blocks_use_small_kernels(self, model: tf.keras.Model) -> None:
+        # Given: the custom model.
+        # Then: blocks 3–6 use (3×3) kernels.
         for name in ("conv3", "conv4", "conv5", "conv6"):
             assert model.get_layer(name).kernel_size == (3, 3)
 
     def test_filter_progression(self, model: tf.keras.Model) -> None:
+        # Given: the custom model.
+        # Then: filter counts match the table in Figure 3.
         expected = {
             "conv1": 32,
             "conv2": 64,
@@ -59,15 +71,19 @@ class TestPaperArchitecture:
             assert model.get_layer(name).filters == filters
 
     def test_gaussian_noise_std(self, model: tf.keras.Model) -> None:
+        # Given: the custom model.
         noise = next(
             layer for layer in model.layers if isinstance(layer, tf.keras.layers.GaussianNoise)
         )
+        # Then: noise std is 0.1 as stated in Section VI.A.
         assert noise.stddev == 0.1
 
     def test_classification_branch_is_softmax_normalised(self, model: tf.keras.Model) -> None:
-        # The two class scores per cell must sum to 1 (softmax output).
+        # Given: the pre-built model.
+        # When: a forward pass is run.
         y = model(tf.random.normal((1, *_IMAGE_SIZE)), training=False)
         class_sums = tf.reduce_sum(y[..., :2], axis=-1)
+        # Then: the two class scores per cell sum to 1.0 (softmax output).
         assert tf.reduce_all(tf.abs(class_sums - 1.0) < 1e-4)
 
 
@@ -144,9 +160,12 @@ class TestSaveLoadRoundTrip:
 
 class TestGradientFlow:
     def test_gradients_reach_trainable_weights(self, model: tf.keras.Model) -> None:
+        # Given: the pre-built model in training mode.
         x = tf.random.normal((2, *_IMAGE_SIZE))
+        # When: a forward pass and mock squared loss are computed.
         with tf.GradientTape() as tape:
             y = model(x, training=True)
             loss = tf.reduce_mean(tf.square(y))
         grads = tape.gradient(loss, model.trainable_weights)
+        # Then: at least one trainable weight receives a non-None gradient.
         assert any(g is not None for g in grads)
