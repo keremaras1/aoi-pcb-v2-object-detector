@@ -11,6 +11,7 @@ and feature map dimensions, then tiled across the batch at runtime.
 """
 
 import numpy as np
+import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.keras.layers import InputSpec, Layer
 from tensorflow.keras.utils import register_keras_serializable
@@ -45,31 +46,21 @@ class GridCenters(Layer):
 
     def build(self, input_shape) -> None:
         self.input_spec = [InputSpec(shape=input_shape)]
-        super().build(input_shape)
 
-    def call(self, x):
         if K.image_data_format() == "channels_last":
-            _, feature_map_height, feature_map_width, _ = K.int_shape(x)
+            _, fh, fw, _ = input_shape
         else:
-            _, _, feature_map_height, feature_map_width = K.int_shape(x)
+            _, _, fh, fw = input_shape
 
-        step_h = self.img_height / feature_map_height
-        step_w = self.img_width / feature_map_width
+        step_h = self.img_height / fh
+        step_w = self.img_width / fw
         offset = 0.5
 
-        cy = np.linspace(
-            step_h * offset,
-            (offset + feature_map_height - 1) * step_h,
-            feature_map_height,
-        )
-        cx = np.linspace(
-            step_w * offset,
-            (offset + feature_map_width - 1) * step_w,
-            feature_map_width,
-        )
+        cy = np.linspace(step_h * offset, (offset + fh - 1) * step_h, fh)
+        cx = np.linspace(step_w * offset, (offset + fw - 1) * step_w, fw)
 
         cx_grid, cy_grid = np.meshgrid(cx, cy)
-        boxes = np.zeros((feature_map_height, feature_map_width, 1, 2))
+        boxes = np.zeros((fh, fw, 1, 2), dtype=np.float32)
         boxes[:, :, 0, 0] = cx_grid
         boxes[:, :, 0, 1] = cy_grid
 
@@ -77,8 +68,13 @@ class GridCenters(Layer):
             boxes[:, :, :, 0] /= self.img_width
             boxes[:, :, :, 1] /= self.img_height
 
-        boxes = np.expand_dims(boxes, axis=0)
-        return K.tile(K.constant(boxes, dtype="float32"), (K.shape(x)[0], 1, 1, 1, 1))
+        # Shape (1, H, W, 1, 2) — batch dim tiled at runtime in call().
+        self._centers = tf.constant(np.expand_dims(boxes, axis=0))
+        super().build(input_shape)
+
+    def call(self, x):
+        batch = tf.shape(x)[0]
+        return tf.tile(self._centers, tf.stack([batch, 1, 1, 1, 1]))
 
     def compute_output_shape(self, input_shape):
         if K.image_data_format() == "channels_last":
