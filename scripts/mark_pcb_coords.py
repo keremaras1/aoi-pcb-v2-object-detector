@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """GUI tool: click IC corner boxes on a PCB image and save them as a CSV.
 
 Usage:

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Generate template assets from a PCB image and its IC corner coordinates.
 
 Usage:

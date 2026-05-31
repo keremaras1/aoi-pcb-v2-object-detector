@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Anchor-to-ground-truth matching strategy.
 
 This module implements nearest-centre matching: each ground-truth IC is

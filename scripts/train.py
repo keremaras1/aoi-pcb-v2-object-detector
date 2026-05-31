@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """CLI script for training the AOI-PCB-SSD model.
 
 Loads data, builds the selected model architecture, and runs the training loop

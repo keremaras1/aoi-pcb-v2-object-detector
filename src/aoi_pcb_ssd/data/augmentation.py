@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Data augmentation chain for synthetic PCB training images.
 
 Each image is assigned exactly one augmentation drawn uniformly from six

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Training and evaluation metrics for IC corner-point detection.
 
 All metric functions follow the Keras metric signature ``f(y_true, y_pred)``

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Keras-side data loader: loads images, parses labels, augments, and encodes.
 
 This module bridges the on-disk synthetic dataset (produced by

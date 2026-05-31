@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Generate the synthetic PCB training or validation dataset.
 
 Usage:

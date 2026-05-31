@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Synthetic PCB dataset generator.
 
 Composites IC cutouts onto PCB template backgrounds with random rotation and

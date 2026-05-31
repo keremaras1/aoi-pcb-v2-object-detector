@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """CLI script for evaluating a trained AOI-PCB-SSD model.
 
 Loads a saved model, reconstructs the same 80/20 validation split used during

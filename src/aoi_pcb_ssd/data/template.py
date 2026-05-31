@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Template asset loader for synthetic PCB dataset generation."""
 
 from pathlib import Path

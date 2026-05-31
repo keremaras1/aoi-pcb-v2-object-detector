@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Utility functions for file sorting and image normalisation."""
 
 import re

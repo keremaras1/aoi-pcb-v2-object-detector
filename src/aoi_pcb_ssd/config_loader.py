@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Hierarchical JSON configuration loader with dot-notation access."""
 
 import json
