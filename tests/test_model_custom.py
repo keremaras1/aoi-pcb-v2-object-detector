@@ -1,9 +1,11 @@
 """Tests for the custom SSD architecture (Figure 3 of the paper)."""
 
+import numpy as np
 import pytest
 import tensorflow as tf
 
 from aoi_pcb_ssd.model import build_custom_model
+from aoi_pcb_ssd.model.ssd_custom import ChannelSwap
 
 _IMAGE_SIZE = (256, 256, 3)
 _N_CLASSES = 1
@@ -71,8 +73,7 @@ class TestPaperArchitecture:
 
 class TestInputPreprocessing:
     def test_preprocessing_options_build_and_run(self) -> None:
-        # config.json enables mean subtraction and stddev division; swap_channels
-        # exercises the remaining optional preprocessing lambda.
+        # Given: the config.json preprocessing options (mean/stddev + swap_channels).
         model = build_custom_model(
             _IMAGE_SIZE,
             n_classes=_N_CLASSES,
@@ -80,8 +81,65 @@ class TestInputPreprocessing:
             divide_by_stddev=127.5,
             swap_channels=[2, 1, 0],
         )
+        # When: a forward pass is run.
         y = model(tf.random.normal((1, *_IMAGE_SIZE)), training=False)
+        # Then: output shape is unchanged — preprocessing does not alter spatial dims.
         assert tuple(y.shape) == (1, *_OUTPUT_SHAPE)
+
+    def test_rescaling_is_numerically_equivalent_to_mean_stddev_formula(self) -> None:
+        # Given: model built with subtract_mean=127.5, divide_by_stddev=127.5.
+        # When: a uint8-range input is passed through just the Rescaling layer.
+        x = tf.constant([[[100.0, 200.0, 50.0]]])  # arbitrary pixel values
+        layer = tf.keras.layers.Rescaling(scale=1.0 / 127.5, offset=-1.0)
+        rescaled = layer(x).numpy()
+        # Then: result equals (x - 127.5) / 127.5 exactly.
+        expected = (np.array([[[100.0, 200.0, 50.0]]]) - 127.5) / 127.5
+        np.testing.assert_allclose(rescaled, expected, atol=1e-6)
+
+
+class TestChannelSwap:
+    def test_swap_permutes_channels(self) -> None:
+        # Given: an image where each channel has a distinct constant value.
+        image = np.zeros((1, 2, 2, 3), dtype=np.float32)
+        image[..., 0], image[..., 1], image[..., 2] = 10.0, 20.0, 30.0
+        # When: channels are swapped to BGR order [2, 1, 0].
+        out = ChannelSwap(order=[2, 1, 0])(image).numpy()
+        # Then: channels appear in reversed order.
+        assert out[0, 0, 0, 0] == 30.0
+        assert out[0, 0, 0, 1] == 20.0
+        assert out[0, 0, 0, 2] == 10.0
+
+    def test_get_config_roundtrip(self) -> None:
+        # Given: a ChannelSwap layer with a non-default order.
+        layer = ChannelSwap(order=[2, 1, 0], name="swap")
+        # When: config is serialised and a new layer is reconstructed.
+        restored = ChannelSwap.from_config(layer.get_config())
+        # Then: the order is preserved exactly.
+        assert restored.order == [2, 1, 0]
+
+
+class TestSaveLoadRoundTrip:
+    """Verify that saved models reload under default safe_mode=True."""
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {},
+            {"subtract_mean": 127.5, "divide_by_stddev": 127.5},
+            {"swap_channels": [2, 1, 0]},
+        ],
+        ids=["no-preprocessing", "mean-stddev", "swap-channels"],
+    )
+    def test_custom_model_reloads_with_identical_predictions(self, tmp_path, kwargs) -> None:
+        # Given: a custom model (small image size to keep the test fast).
+        model = build_custom_model((32, 32, 3), n_classes=1, **kwargs)
+        x = np.random.rand(2, 32, 32, 3).astype(np.float32)
+        # When: the model is saved and reloaded under default safe_mode=True.
+        path = str(tmp_path / "model.keras")
+        model.save(path)
+        loaded = tf.keras.models.load_model(path)  # safe_mode=True by default
+        # Then: predictions are bit-identical.
+        np.testing.assert_array_equal(model.predict(x, verbose=0), loaded.predict(x, verbose=0))
 
 
 class TestGradientFlow:

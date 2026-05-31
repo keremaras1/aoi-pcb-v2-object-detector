@@ -14,7 +14,7 @@ results.
 """
 
 import numpy as np
-import tensorflow.keras.backend as K
+import tensorflow as tf
 from tensorflow.keras.layers import (
     Activation,
     BatchNormalization,
@@ -22,15 +22,39 @@ from tensorflow.keras.layers import (
     Conv2D,
     GaussianNoise,
     Input,
-    Lambda,
     MaxPooling2D,
     ReLU,
+    Rescaling,
     Reshape,
 )
 from tensorflow.keras.models import Model
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.utils import register_keras_serializable
 
 from aoi_pcb_ssd.model.grid_centers import GridCenters
+
+
+@register_keras_serializable(package="aoi_pcb_ssd")
+class ChannelSwap(tf.keras.layers.Layer):
+    """Permute image channels to a user-specified order.
+
+    Replaces the upstream Lambda approach with a fully serializable layer,
+    enabling ``load_model`` to work under default ``safe_mode=True``.
+
+    Args:
+        order: Channel index permutation, e.g. ``[2, 1, 0]`` for RGB→BGR.
+    """
+
+    def __init__(self, order: list[int], **kwargs) -> None:
+        self.order = list(order)
+        super().__init__(**kwargs)
+
+    def call(self, x):
+        return tf.stack([x[..., i] for i in self.order], axis=-1)
+
+    def get_config(self):
+        return {**super().get_config(), "order": self.order}
+
 
 # Paper-defined architecture constants (Section IV.B, Figure 3).
 _FILTERS = (32, 64, 128, 256, 512, 512)
@@ -77,44 +101,15 @@ def build_custom_model(
     l2_reg = l2_regularization
     img_height, img_width, img_channels = image_size
 
-    # --- Input preprocessing lambdas -----------------------------------------
-    # The identity layer ensures the subsequent optional lambdas can be chained
-    # regardless of which preprocessing options are enabled.
-    def _identity(t):
-        return t
-
-    def _subtract_mean(t):
-        return t - np.array(subtract_mean)
-
-    def _divide_by_stddev(t):
-        return t / np.array(divide_by_stddev)
-
-    def _swap_channels(t):
-        return K.stack([t[..., i] for i in swap_channels], axis=-1)
-
+    # --- Input preprocessing (serializable; no Lambda layers) -----------------
     x = Input(shape=(img_height, img_width, img_channels))
-    x1 = Lambda(
-        _identity, output_shape=(img_height, img_width, img_channels), name="identity_layer"
-    )(x)
-
-    if subtract_mean is not None:
-        x1 = Lambda(
-            _subtract_mean,
-            output_shape=(img_height, img_width, img_channels),
-            name="input_mean_normalization",
-        )(x1)
-    if divide_by_stddev is not None:
-        x1 = Lambda(
-            _divide_by_stddev,
-            output_shape=(img_height, img_width, img_channels),
-            name="input_stddev_normalization",
-        )(x1)
+    x1 = x
+    if subtract_mean is not None or divide_by_stddev is not None:
+        _scale = 1.0 / divide_by_stddev if divide_by_stddev is not None else 1.0
+        _offset = float(-subtract_mean * _scale) if subtract_mean is not None else 0.0
+        x1 = Rescaling(scale=_scale, offset=_offset, name="input_rescaling")(x1)
     if swap_channels:
-        x1 = Lambda(
-            _swap_channels,
-            output_shape=(img_height, img_width, img_channels),
-            name="input_channel_swap",
-        )(x1)
+        x1 = ChannelSwap(order=list(swap_channels), name="input_channel_swap")(x1)
 
     # --- Feature extractor (6 blocks) ----------------------------------------
     x1 = GaussianNoise(_GAUSSIAN_NOISE_STD)(x1)

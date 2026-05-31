@@ -29,7 +29,6 @@ from aoi_pcb_ssd.config_loader import Config
 from aoi_pcb_ssd.data.data_generator import DataGenerator
 from aoi_pcb_ssd.encoding.input_encoder import SSDInputEncoder
 from aoi_pcb_ssd.encoding.output_decoder import decode_detections
-from aoi_pcb_ssd.model.grid_centers import GridCenters
 from aoi_pcb_ssd.model.loss import AOILoss
 from aoi_pcb_ssd.model.metrics import class_mAP, mae
 
@@ -159,11 +158,7 @@ def main() -> None:
     # compile=False skips Keras's attempt to deserialise the saved compile config,
     # which fails for custom loss methods. We re-compile immediately after.
     aoi_loss = AOILoss(**cfg.get_init_kwargs("training.loss"))
-    model = tf.keras.models.load_model(
-        str(model_path),
-        compile=False,
-        custom_objects={"GridCenters": GridCenters},
-    )
+    model = tf.keras.models.load_model(str(model_path), compile=False)
     model.compile(
         optimizer=Adam(**cfg.get_init_kwargs("training.optimizer")),
         loss=aoi_loss.compute_loss,

@@ -1,5 +1,6 @@
 """Tests for the MobileNetV2 transfer-learning architecture (Figure 4 of the paper)."""
 
+import numpy as np
 import pytest
 import tensorflow as tf
 
@@ -72,3 +73,16 @@ class TestGradientFlow:
             loss = tf.reduce_mean(tf.square(y))
         grads = tape.gradient(loss, model.trainable_weights)
         assert any(g is not None for g in grads)
+
+
+class TestSaveLoadRoundTrip:
+    def test_reloads_under_default_safe_mode(self, tmp_path) -> None:
+        # Given: a transfer model with random weights (no ImageNet download).
+        model = build_transfer_model((32, 32, 3), n_classes=1, weights=None)
+        x = np.random.rand(2, 32, 32, 3).astype(np.float32)
+        # When: the model is saved and reloaded under default safe_mode=True.
+        path = str(tmp_path / "model.keras")
+        model.save(path)
+        loaded = tf.keras.models.load_model(path)
+        # Then: predictions are bit-identical.
+        np.testing.assert_array_equal(model.predict(x, verbose=0), loaded.predict(x, verbose=0))

@@ -13,8 +13,10 @@ and feature map dimensions, then tiled across the batch at runtime.
 import numpy as np
 import tensorflow.keras.backend as K
 from tensorflow.keras.layers import InputSpec, Layer
+from tensorflow.keras.utils import register_keras_serializable
 
 
+@register_keras_serializable(package="aoi_pcb_ssd")
 class GridCenters(Layer):
     """Generate (cx, cy) anchor centre coordinates for each feature map cell.
 
