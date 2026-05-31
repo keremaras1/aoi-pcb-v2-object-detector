@@ -20,8 +20,7 @@ class Config:
 
     def __getattr__(self, name: str) -> Any:
         raise AttributeError(
-            f"Config has no attribute '{name}'. "
-            f"Check that the key exists in config.json."
+            f"Config has no attribute '{name}'. " f"Check that the key exists in config.json."
         )
 
     def _set_attributes(self, config_data: dict[str, Any]) -> None:
@@ -54,18 +53,13 @@ class Config:
             try:
                 node = getattr(node, part)
             except AttributeError:
-                raise ValueError(
-                    f"Config key not found: '{key}' (failed at '{part}')."
-                )
+                raise ValueError(f"Config key not found: '{key}' (failed at '{part}').")
         if not isinstance(node, Config):
             raise ValueError(
                 f"Config key '{key}' resolves to a scalar value, not a dict section. "
                 f"Use config.{key.replace('.', '.')} to access it directly."
             )
-        return {
-            k: v.to_dict() if isinstance(v, Config) else v
-            for k, v in vars(node).items()
-        }
+        return {k: v.to_dict() if isinstance(v, Config) else v for k, v in vars(node).items()}
 
     def to_dict(self) -> dict[str, Any]:
         """Recursively convert this Config back to a plain dict.
@@ -73,10 +67,7 @@ class Config:
         Returns:
             A plain Python dict representation of this config section.
         """
-        return {
-            k: v.to_dict() if isinstance(v, Config) else v
-            for k, v in vars(self).items()
-        }
+        return {k: v.to_dict() if isinstance(v, Config) else v for k, v in vars(self).items()}
 
     @classmethod
     def from_dict(cls, data_dict: dict[str, Any]) -> "Config":

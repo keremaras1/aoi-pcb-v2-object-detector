@@ -27,8 +27,9 @@ from aoi_pcb_ssd.data.dataset_generator import PCBDatasetGenerator
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate synthetic PCB dataset.")
     parser.add_argument("--config", default="config.json", help="Path to config.json.")
-    parser.add_argument("--split", choices=["train", "val"], default="train",
-                        help="Which data split to generate.")
+    parser.add_argument(
+        "--split", choices=["train", "val"], default="train", help="Which data split to generate."
+    )
     args = parser.parse_args()
 
     cfg = Config(args.config)

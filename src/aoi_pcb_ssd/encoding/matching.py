@@ -41,7 +41,7 @@ def match_by_nearest_centre(
             candidate = int(np.argmin(distances))
         matches.append(candidate)
 
-    assert len(matches) == gt_centers.shape[0], (
-        f"Match count mismatch: expected {gt_centers.shape[0]}, got {len(matches)}"
-    )
+    assert (
+        len(matches) == gt_centers.shape[0]
+    ), f"Match count mismatch: expected {gt_centers.shape[0]}, got {len(matches)}"
     return matches

@@ -8,14 +8,15 @@ Usage::
 
     python scripts/train.py --architecture custom
     python scripts/train.py --architecture transfer
-    python scripts/train.py --architecture custom --config config.json --output-dir experiments/run_1
+    python scripts/train.py --architecture custom --config config.json \
+        --output-dir experiments/run_1
 """
 
 import argparse
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
-import sys
 
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -36,16 +37,23 @@ from aoi_pcb_ssd.model.ssd_transfer import build_transfer_model
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train the AOI-PCB-SSD model.")
     parser.add_argument(
-        "--architecture", choices=["custom", "transfer"], required=True,
+        "--architecture",
+        choices=["custom", "transfer"],
+        required=True,
         help="Model architecture: 'custom' (Figure 3) or 'transfer' (Figure 4).",
     )
     parser.add_argument(
-        "--config", default="config.json",
+        "--config",
+        default="config.json",
         help="Path to the JSON configuration file (default: config.json).",
     )
     parser.add_argument(
-        "--output-dir", default=None,
-        help="Directory to save the trained model and logs. Defaults to experiments/run_<timestamp>.",
+        "--output-dir",
+        default=None,
+        help=(
+            "Directory to save the trained model and logs. "
+            "Defaults to experiments/run_<timestamp>."
+        ),
     )
     return parser.parse_args()
 
@@ -92,7 +100,11 @@ def main() -> None:
 
     # Split matches the paper's training setup: 80/20, shuffled, random_state=42
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=t.val_split, shuffle=True, random_state=t.random_seed,
+        X,
+        y,
+        test_size=t.val_split,
+        shuffle=True,
+        random_state=t.random_seed,
     )
     print(f"Train: {X_train.shape}  Val: {X_val.shape}")
 
@@ -133,7 +145,8 @@ def main() -> None:
 
     # --- Training ---
     history = model.fit(
-        X_train, y_train,
+        X_train,
+        y_train,
         batch_size=t.batch_size,
         epochs=t.epochs,
         validation_data=(X_val, y_val),

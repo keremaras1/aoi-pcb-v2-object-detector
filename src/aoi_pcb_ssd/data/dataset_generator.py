@@ -19,8 +19,18 @@ from tqdm import tqdm
 from aoi_pcb_ssd.data.template import Template
 
 _LABEL_COLUMNS = [
-    "frame", "tl_x", "tl_y", "tr_x", "tr_y",
-    "bl_x", "bl_y", "br_x", "br_y", "cx", "cy", "class_id",
+    "frame",
+    "tl_x",
+    "tl_y",
+    "tr_x",
+    "tr_y",
+    "bl_x",
+    "bl_y",
+    "br_x",
+    "br_y",
+    "cx",
+    "cy",
+    "class_id",
 ]
 _CROP_RATIOS = np.linspace(0.1, 0.9, num=5, endpoint=True)
 
@@ -40,13 +50,14 @@ def _centroids_to_corners(centroids: np.ndarray) -> np.ndarray:
     y_min = centroids[:, 1] - centroids[:, 3] / 2
     y_max = centroids[:, 1] + centroids[:, 3] / 2
     corners = np.array(
-        [x_min, y_min, x_max, y_min, x_min, y_max, x_max, y_max,
-         centroids[:, 0], centroids[:, 1]]
+        [x_min, y_min, x_max, y_min, x_min, y_max, x_max, y_max, centroids[:, 0], centroids[:, 1]]
     ).T
     return np.rint(corners).astype(int)
 
 
-def _rotate(origin: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
+def _rotate(
+    origin: tuple[float, float], point: tuple[float, float], angle: float
+) -> tuple[float, float]:
     """Rotate a point counterclockwise around an origin by angle (radians)."""
     ox, oy = origin
     px, py = point
@@ -63,7 +74,9 @@ def _rotate_coords(coords: np.ndarray, angle: float) -> np.ndarray:
     return np.reshape(coords, (-1,))
 
 
-def _get_new_corners(corners: np.ndarray, offset_x: int, offset_y: int, rotation: float) -> np.ndarray:
+def _get_new_corners(
+    corners: np.ndarray, offset_x: int, offset_y: int, rotation: float
+) -> np.ndarray:
     """Apply translation and rotation to a row of corner coordinates."""
     corners_mat = np.reshape(corners, (-1, 2))
     corners_mat += np.array([offset_x, offset_y])
@@ -243,7 +256,9 @@ class PCBDatasetGenerator:
         valid_corners = _shift_coords_for_crop(xmin, ymin, corners[ic_idx, :].copy())
 
         if crop_width != self.img_size or crop_height != self.img_size:
-            crop_img = crop_img.resize((self.img_size, self.img_size), resample=Image.Resampling.BICUBIC)
+            crop_img = crop_img.resize(
+                (self.img_size, self.img_size), resample=Image.Resampling.BICUBIC
+            )
             valid_corners = self._resize_coords(crop_width, crop_height, valid_corners)
 
         self.crop_save_path.mkdir(parents=True, exist_ok=True)

@@ -46,9 +46,11 @@ def _dominant_color(img: np.ndarray) -> np.ndarray:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate PCB template assets.")
-    parser.add_argument("--pcb-image",   required=True, help="Source PCB image (.jpg).")
-    parser.add_argument("--corners-csv", required=True, help="IC corner boxes CSV (x_min,y_min,x_max,y_max).")
-    parser.add_argument("--output-dir",  required=True, help="Directory to write template assets.")
+    parser.add_argument("--pcb-image", required=True, help="Source PCB image (.jpg).")
+    parser.add_argument(
+        "--corners-csv", required=True, help="IC corner boxes CSV (x_min,y_min,x_max,y_max)."
+    )
+    parser.add_argument("--output-dir", required=True, help="Directory to write template assets.")
     args = parser.parse_args()
 
     pcb_path = Path(args.pcb_image)
@@ -66,7 +68,7 @@ def main() -> None:
     # IC cutouts
     labels = []
     for i, c in enumerate(corners):
-        cutout = img[c[1]:c[3], c[0]:c[2], :]
+        cutout = img[c[1] : c[3], c[0] : c[2], :]
         name = f"cropped_ic_{i}.jpg"
         cv2.imwrite(str(out_dir / name), cutout)
         labels.append([name, *map(float, centroids[i])])
@@ -75,15 +77,15 @@ def main() -> None:
     # Background (IC regions filled with dominant colour)
     background = img.copy()
     for c in corners:
-        background[c[1]:c[3], c[0]:c[2], :] = dominant
+        background[c[1] : c[3], c[0] : c[2], :] = dominant
     cv2.imwrite(str(out_dir / "background_pcb.jpg"), background)
-    print(f"Saved background_pcb.jpg")
+    print("Saved background_pcb.jpg")
 
     # Centroid labels
-    pd.DataFrame(
-        labels, columns=["ic_frame", "cx", "cy", "w", "h"]
-    ).to_csv(out_dir / "ic_centroids.csv", index=False)
-    print(f"Saved ic_centroids.csv")
+    pd.DataFrame(labels, columns=["ic_frame", "cx", "cy", "w", "h"]).to_csv(
+        out_dir / "ic_centroids.csv", index=False
+    )
+    print("Saved ic_centroids.csv")
 
 
 if __name__ == "__main__":

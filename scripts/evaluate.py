@@ -14,8 +14,8 @@ Usage::
 """
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -33,32 +33,36 @@ from aoi_pcb_ssd.model.grid_centers import GridCenters
 from aoi_pcb_ssd.model.loss import AOILoss
 from aoi_pcb_ssd.model.metrics import class_mAP, mae
 
-
 _CLASSES = ["background", "ic"]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate a trained AOI-PCB-SSD model.")
     parser.add_argument(
-        "--model-path", default=None,
+        "--model-path",
+        default=None,
         help=(
             "Path to the saved model file (.keras). "
             "Defaults to the most recently modified run in experiments/."
         ),
     )
     parser.add_argument(
-        "--config", default=None,
+        "--config",
+        default=None,
         help=(
             "Path to a JSON configuration file. "
             "Defaults to config.json inside the run directory."
         ),
     )
     parser.add_argument(
-        "--save-visuals", action="store_true",
+        "--save-visuals",
+        action="store_true",
         help="Save prediction overlay images to <run-dir>/visuals/.",
     )
     parser.add_argument(
-        "--n-visuals", type=int, default=15,
+        "--n-visuals",
+        type=int,
+        default=15,
         help="Number of prediction overlay images to save (default: 15).",
     )
     return parser.parse_args()
@@ -84,17 +88,18 @@ def draw_keypoints(
     for det in actual_dets:
         corners = det[2:].reshape(-1, 2).astype(int)
         for pt in corners:
-            cv2.circle(img, tuple(pt), 4, (0, 0, 255), 2)   # red — ground truth
+            cv2.circle(img, tuple(pt), 4, (0, 0, 255), 2)  # red — ground truth
 
     for det in predicted_dets:
         corners = det[2:].reshape(-1, 2).astype(int)
         for pt in corners:
-            cv2.circle(img, tuple(pt), 4, (255, 0, 0), 2)   # blue — prediction
+            cv2.circle(img, tuple(pt), 4, (255, 0, 0), 2)  # blue — prediction
         cx = int((corners[0, 0] + corners[3, 0]) / 2)
         cy = int((corners[0, 1] + corners[3, 1]) / 2)
         label = f"{_CLASSES[int(det[0])]}: {det[1]:.2f}"
-        cv2.putText(img, label, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX,
-                    0.4, (255, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(
+            img, label, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1, cv2.LINE_AA
+        )
 
     return img
 
@@ -142,7 +147,11 @@ def main() -> None:
     X, y = generator.get_data()
 
     _, X_val, _, y_val = train_test_split(
-        X, y, test_size=t.val_split, shuffle=True, random_state=t.random_seed,
+        X,
+        y,
+        test_size=t.val_split,
+        shuffle=True,
+        random_state=t.random_seed,
     )
     print(f"Validation data shape: {X_val.shape}, Labels shape: {y_val.shape}")
 

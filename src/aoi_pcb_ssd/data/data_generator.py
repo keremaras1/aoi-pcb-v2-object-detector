@@ -10,20 +10,16 @@ injected ``SSDInputEncoder`` instance.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from aoi_pcb_ssd.encoding.input_encoder import SSDInputEncoder
+from typing import Any
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 from PIL import Image
 from tqdm import tqdm
 
 from aoi_pcb_ssd.data.augmentation import DataAugmentationChain
 from aoi_pcb_ssd.data.utils import sort_alphanumeric
-
-import pandas as pd
 
 
 class DataGenerator:
@@ -55,8 +51,7 @@ class DataGenerator:
         self.seed = seed
 
         self.img_filenames: list[str] = [
-            name for name in sort_alphanumeric(self.parent_dir)
-            if name.endswith(".jpg")
+            name for name in sort_alphanumeric(self.parent_dir) if name.endswith(".jpg")
         ]
         self.X: NDArray[np.uint8] = np.empty(0, dtype=np.uint8)
         self.y: list[NDArray] = []
@@ -76,9 +71,7 @@ class DataGenerator:
             self.y.append(rows.iloc[:, [11, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]].to_numpy())
 
     def _augment(self) -> None:
-        chain = DataAugmentationChain(
-            self.X, self.y, probability=self.probability, seed=self.seed
-        )
+        chain = DataAugmentationChain(self.X, self.y, probability=self.probability, seed=self.seed)
         self.X, self.y = chain()
 
     def _encode(self) -> None:

@@ -43,22 +43,19 @@ def decode_detections(
     # Allocate output: [class_id, confidence, tl_x, tl_y, tr_x, tr_y, bl_x, bl_y, br_x, br_y]
     decoded = np.copy(y_pred[:, :, -12:-2])
 
-    decoded[:, :, 0] = np.argmax(y_pred[:, :, :-10], axis=-1)   # class id
-    decoded[:, :, 1] = np.amax(y_pred[:, :, :-10], axis=-1)     # confidence
+    decoded[:, :, 0] = np.argmax(y_pred[:, :, :-10], axis=-1)  # class id
+    decoded[:, :, 1] = np.amax(y_pred[:, :, :-10], axis=-1)  # confidence
 
     # Add cell-centre back to corner offsets to recover absolute coordinates
-    decoded[:, :, [2, 4, 6, 8]] = (
-        y_pred[:, :, [-10, -8, -6, -4]] + np.expand_dims(y_pred[:, :, -2], axis=-1)
+    decoded[:, :, [2, 4, 6, 8]] = y_pred[:, :, [-10, -8, -6, -4]] + np.expand_dims(
+        y_pred[:, :, -2], axis=-1
     )
-    decoded[:, :, [3, 5, 7, 9]] = (
-        y_pred[:, :, [-9, -7, -5, -3]] + np.expand_dims(y_pred[:, :, -1], axis=-1)
+    decoded[:, :, [3, 5, 7, 9]] = y_pred[:, :, [-9, -7, -5, -3]] + np.expand_dims(
+        y_pred[:, :, -1], axis=-1
     )
 
     if normalize_coords:
         decoded[:, :, [2, 4, 6, 8]] *= img_width
         decoded[:, :, [3, 5, 7, 9]] *= img_height
 
-    return [
-        batch_item[np.nonzero(batch_item[:, 0])]
-        for batch_item in decoded
-    ]
+    return [batch_item[np.nonzero(batch_item[:, 0])] for batch_item in decoded]

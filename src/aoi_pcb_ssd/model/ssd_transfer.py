@@ -35,7 +35,7 @@ from aoi_pcb_ssd.model.grid_centers import GridCenters
 _BN_MOMENTUM = 0.99
 _KERNEL = (3, 3)
 _GAUSSIAN_NOISE_STD = 0.1
-_ADAPTER_FILTERS = 512   # maps MobileNetV2's 1280 output channels → 512
+_ADAPTER_FILTERS = 512  # maps MobileNetV2's 1280 output channels → 512
 
 
 def build_transfer_model(
@@ -87,21 +87,37 @@ def build_transfer_model(
     x1 = backbone(x1)
 
     # Adapter: maps MobileNetV2 output (8×8×1280) → 8×8×512
-    x1 = Conv2D(_ADAPTER_FILTERS, _KERNEL, padding="same",
-                 kernel_initializer="he_normal", kernel_regularizer=l2(l2_reg),
-                 name="conv1")(x1)
+    x1 = Conv2D(
+        _ADAPTER_FILTERS,
+        _KERNEL,
+        padding="same",
+        kernel_initializer="he_normal",
+        kernel_regularizer=l2(l2_reg),
+        name="conv1",
+    )(x1)
     x1 = BatchNormalization(axis=3, momentum=_BN_MOMENTUM, name="bn1")(x1)
     x1 = ReLU(name="relu1")(x1)
 
     # Three-branch detection head (identical to the custom architecture)
-    classes1 = Conv2D(n_boxes * n_classes, _KERNEL, padding="same",
-                      kernel_initializer="he_normal", kernel_regularizer=l2(l2_reg),
-                      name="classes1")(x1)
-    offsets1 = Conv2D(n_boxes * 8, _KERNEL, padding="same",
-                      kernel_initializer="he_normal", kernel_regularizer=l2(l2_reg),
-                      name="offsets1")(x1)
-    centers1 = GridCenters(img_height, img_width, normalize_coords=normalize_coords,
-                            name="centers1")(offsets1)
+    classes1 = Conv2D(
+        n_boxes * n_classes,
+        _KERNEL,
+        padding="same",
+        kernel_initializer="he_normal",
+        kernel_regularizer=l2(l2_reg),
+        name="classes1",
+    )(x1)
+    offsets1 = Conv2D(
+        n_boxes * 8,
+        _KERNEL,
+        padding="same",
+        kernel_initializer="he_normal",
+        kernel_regularizer=l2(l2_reg),
+        name="offsets1",
+    )(x1)
+    centers1 = GridCenters(
+        img_height, img_width, normalize_coords=normalize_coords, name="centers1"
+    )(offsets1)
 
     classes1_reshaped = Reshape((-1, n_classes), name="classes1_reshape")(classes1)
     offsets1_reshaped = Reshape((-1, 8), name="offsets1_reshape")(offsets1)

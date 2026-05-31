@@ -22,11 +22,9 @@ def sort_alphanumeric(directory: str | Path) -> list[str]:
     Returns:
         Sorted list of filenames (not full paths).
     """
+
     def _key(name: str) -> list[int | str]:
-        return [
-            int(part) if part.isdigit() else part.lower()
-            for part in re.split(r"(\d+)", name)
-        ]
+        return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", name)]
 
     return sorted([p.name for p in Path(directory).iterdir()], key=_key)
 

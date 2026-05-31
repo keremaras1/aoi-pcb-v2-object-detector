@@ -47,12 +47,17 @@ def main() -> None:
     cv2.destroyAllWindows()
 
     if len(_clicks) % 2 != 0:
-        print(f"Warning: {len(_clicks)} clicks recorded — expected an even number. Last click ignored.")
+        print(
+            f"Warning: {len(_clicks)} clicks recorded — expected an even number. "
+            "Last click ignored."
+        )
         _clicks.pop()
 
     corners = np.array(_clicks).reshape(-1, 4)
     out_path = img_path.parent / f"{img_path.stem}_ic_corners.csv"
-    pd.DataFrame(corners, columns=["x_min", "y_min", "x_max", "y_max"]).to_csv(out_path, index=False)
+    pd.DataFrame(corners, columns=["x_min", "y_min", "x_max", "y_max"]).to_csv(
+        out_path, index=False
+    )
     print(f"Saved {len(corners)} IC corner boxes → {out_path}")
 
 

@@ -20,7 +20,6 @@ import sys
 from pathlib import Path
 
 import cv2
-import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -28,8 +27,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Visualise ground-truth labels on dataset images.")
-    parser.add_argument("--data-dir",   required=True, help="Directory containing images and labels.csv.")
-    parser.add_argument("--n-images",   type=int, default=10, help="Number of images to annotate.")
+    parser.add_argument(
+        "--data-dir", required=True, help="Directory containing images and labels.csv."
+    )
+    parser.add_argument("--n-images", type=int, default=10, help="Number of images to annotate.")
     parser.add_argument("--output-dir", required=True, help="Directory to write annotated images.")
     args = parser.parse_args()
 

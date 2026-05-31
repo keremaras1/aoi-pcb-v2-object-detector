@@ -110,19 +110,19 @@ class SSDInputEncoder:
 
             classes_one_hot = class_vectors[labels[:, _CLASS_ID].astype(int)]
             labels_one_hot = np.concatenate(
-                [classes_one_hot,
-                 labels[:, [_TL_X, _TL_Y, _TR_X, _TR_Y, _BL_X, _BL_Y, _BR_X, _BR_Y]]],
+                [
+                    classes_one_hot,
+                    labels[:, [_TL_X, _TL_Y, _TR_X, _TR_Y, _BL_X, _BL_Y, _BR_X, _BR_Y]],
+                ],
                 axis=-1,
             )
 
-            matches = match_by_nearest_centre(
-                labels[:, [_CX, _CY]], y_encoded[i, :, -2:]
-            )
+            matches = match_by_nearest_centre(labels[:, [_CX, _CY]], y_encoded[i, :, -2:])
             y_encoded[i, matches, :-2] = labels_one_hot
 
         # Convert absolute corner coords to cell-centre-relative offsets for
         # positive cells only; background cells keep their zero corner values.
-        is_positive = (y_encoded[:, :, self.background_id] == 0)
+        is_positive = y_encoded[:, :, self.background_id] == 0
         cx_grid = y_encoded[:, :, -2]
         cy_grid = y_encoded[:, :, -1]
 
