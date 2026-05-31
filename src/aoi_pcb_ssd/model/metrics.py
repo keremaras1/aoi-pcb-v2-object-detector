@@ -16,10 +16,10 @@ constructs its metric object locally so every call starts from a clean state.
 
 import tensorflow as tf
 
-
 # ---------------------------------------------------------------------------
 # Classification metrics
 # ---------------------------------------------------------------------------
+
 
 def class_mAP(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Custom mAP: mean of (precision × recall) over all foreground classes.
@@ -42,10 +42,16 @@ def class_mAP(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     class_true = tf.cast(tf.argmax(y_true[:, :, :-10], axis=-1), tf.float32)
     class_pred = tf.cast(tf.argmax(y_pred[:, :, :-10], axis=-1), tf.float32)
 
-    def _per_class_ap(c: tf.Tensor) -> tf.Tensor:
+    # Traced into a graph by tf.map_fn below, so coverage.py cannot record
+    # these lines; their behaviour is verified by tests/test_metrics.py.
+    def _per_class_ap(c: tf.Tensor) -> tf.Tensor:  # pragma: no cover
         tp = tf.cast(tf.logical_and(tf.equal(class_true, c), tf.equal(class_pred, c)), tf.float32)
-        fp = tf.cast(tf.logical_and(tf.not_equal(class_true, c), tf.equal(class_pred, c)), tf.float32)
-        fn = tf.cast(tf.logical_and(tf.equal(class_true, c), tf.not_equal(class_pred, c)), tf.float32)
+        fp = tf.cast(
+            tf.logical_and(tf.not_equal(class_true, c), tf.equal(class_pred, c)), tf.float32
+        )
+        fn = tf.cast(
+            tf.logical_and(tf.equal(class_true, c), tf.not_equal(class_pred, c)), tf.float32
+        )
         n_tp = tf.reduce_sum(tp)
         precision = n_tp / (n_tp + tf.reduce_sum(fp))
         recall = n_tp / (n_tp + tf.reduce_sum(fn))
@@ -115,9 +121,8 @@ def recall(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
 # Regression metrics (positive cells only)
 # ---------------------------------------------------------------------------
 
-def _positive_offsets(
-    y_true: tf.Tensor, y_pred: tf.Tensor
-) -> tuple[tf.Tensor, tf.Tensor]:
+
+def _positive_offsets(y_true: tf.Tensor, y_pred: tf.Tensor) -> tuple[tf.Tensor, tf.Tensor]:
     """Extract predicted and true corner offsets for positive (IC) cells only."""
     true_off = tf.reshape(y_true[:, :, -10:-2], [-1, 8])
     pred_off = tf.reshape(y_pred[:, :, -10:-2], [-1, 8])
