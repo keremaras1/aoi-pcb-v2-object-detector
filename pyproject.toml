@@ -7,7 +7,7 @@ name = "aoi-pcb-ssd"
 version = "0.1.0"
 description = "Automated Optical Inspection for PCBA assembly lines using a custom SSD object detector"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 authors = [{ name = "Kerem Aras" }]
 license = { text = "Apache-2.0" }
 
@@ -23,10 +23,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-metal = ["tensorflow-metal==1.2.*"]
-cuda = ["tensorflow[and-cuda]==2.18.*"]
+metal = ["tensorflow-metal==1.2.*; sys_platform == 'darwin'"]
+cuda = ["tensorflow[and-cuda]==2.18.*; sys_platform == 'linux'"]
 notebooks = ["matplotlib", "jupyterlab"]
 dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.4", "black>=24.0"]
+
+[tool.uv]
+conflicts = [[{ extra = "metal" }, { extra = "cuda" }]]
 
 [project.urls]
 Repository = "https://github.com/keremaras1/aoi-pcb-v2-object-detector"
@@ -36,14 +39,14 @@ packages = ["src/aoi_pcb_ssd"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
 [tool.black]
 line-length = 100
-target-version = ["py310"]
+target-version = ["py312"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

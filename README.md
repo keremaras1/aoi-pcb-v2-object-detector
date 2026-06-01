@@ -1,6 +1,6 @@
 # AOI-PCB-SSD: Automated Optical Inspection for PCBA Assembly Lines
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/keremaras1/aoi-pcb-v2-object-detector/ci.yml?branch=main&label=CI)](https://github.com/keremaras1/aoi-pcb-v2-object-detector/actions/workflows/ci.yml)
 
@@ -57,14 +57,14 @@ The system provides two architectures that share an identical three-branch detec
 
 A six-block convolutional feature extractor producing 8×8 feature maps:
 
-| Block | Layers | Filters | Kernel |
-|-------|--------|---------|--------|
-| 1 | Conv · BN · ReLU · MaxPool | 32 | **5×5** |
-| 2 | Conv · BN · ReLU · MaxPool | 64 | **5×5** |
-| 3 | Conv · BN · ReLU · MaxPool | 128 | 3×3 |
-| 4 | Conv · BN · ReLU | 256 | 3×3 |
-| 5 | Conv · BN · ReLU · MaxPool | 512 | 3×3 |
-| 6 | Conv · BN · ReLU | 512 | 3×3 |
+| Block | Layers                     | Filters | Kernel  |
+|-------|----------------------------|---------|---------|
+| 1     | Conv · BN · ReLU · MaxPool | 32      | **5×5** |
+| 2     | Conv · BN · ReLU · MaxPool | 64      | **5×5** |
+| 3     | Conv · BN · ReLU · MaxPool | 128     | 3×3     |
+| 4     | Conv · BN · ReLU           | 256     | 3×3     |
+| 5     | Conv · BN · ReLU · MaxPool | 512     | 3×3     |
+| 6     | Conv · BN · ReLU           | 512     | 3×3     |
 
 The wider 5×5 kernels in the first two blocks give a larger receptive field for the segmentation-like corner-localisation task (paper §IV.B). Three branches read directly from the final feature map:
 
@@ -80,23 +80,37 @@ The custom loss (paper §V) combines hard-negative-mined softmax cross-entropy f
 
 ## Installation
 
-Requires Python ≥ 3.10 and TensorFlow 2.18.
+Requires Python ≥ 3.12 and TensorFlow 2.18.
+
+### With uv (recommended)
 
 ```bash
 git clone https://github.com/keremaras1/aoi-pcb-v2-object-detector.git
 cd aoi-pcb-v2-object-detector
 
 # CPU only
-pip install -e ".[dev]"
+uv sync --extra dev
 
 # Apple Silicon GPU (tensorflow-metal)
-pip install -e ".[dev,metal]"
+uv sync --extra dev --extra metal
 
 # Linux / WSL2 CUDA GPU
-pip install -e ".[dev,cuda]"
+uv sync --extra dev --extra cuda
 
 # With notebook dependencies (matplotlib, jupyterlab)
-pip install -e ".[dev,notebooks]"
+uv sync --extra dev --extra notebooks
+```
+
+Then prefix any command with `uv run` (e.g. `uv run python scripts/train.py ...`) or activate the managed venv with `source .venv/bin/activate`.
+
+### With pip (fallback)
+
+```bash
+git clone https://github.com/keremaras1/aoi-pcb-v2-object-detector.git
+cd aoi-pcb-v2-object-detector
+pip install -e ".[dev]"         # CPU
+pip install -e ".[dev,metal]"   # Apple Silicon GPU
+pip install -e ".[dev,cuda]"    # Linux / WSL2 CUDA GPU
 ```
 
 ## Usage
@@ -179,7 +193,8 @@ All parameters live in `config.json`:
 ## Testing
 
 ```bash
-pytest
+uv run pytest       # via uv
+# or: pytest        # with venv activated
 ```
 
 The suite covers the config loader, data utilities, the synthetic generation pipeline, the SSD encoder/decoder and nearest-centre matching, the `GridCenters` layer, both model architectures, the custom loss, and all metrics — with **100% statement coverage** across `src/aoi_pcb_ssd/`. Tests are fully hermetic: synthetic templates and tensors are built in `tmp_path`, models are constructed with `weights=None`, and no real PCB images, pre-trained weights, or pre-generated datasets are required.
