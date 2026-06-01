@@ -48,4 +48,4 @@ target-version = ["py310"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-addopts = "--cov=src/aoi_pcb_ssd --cov-report=term-missing"
+addopts = "--cov=src/aoi_pcb_ssd --cov=scripts --cov-report=term-missing"
