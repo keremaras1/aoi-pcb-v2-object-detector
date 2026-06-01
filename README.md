@@ -78,6 +78,14 @@ Replaces the custom feature extractor with a **MobileNetV2** backbone (ImageNet 
 
 The custom loss (paper §V) combines hard-negative-mined softmax cross-entropy for classification with a piecewise L1/L2 corner-localisation term, weighted by α.
 
+## Demo
+
+Live camera inference from the paper's §VII real-time demo. Detected IC corners are drawn in blue with per-detection confidence scores; the model runs on a laptop GPU in real time.
+
+| Two ICs, 1.00 confidence | Dense board, five detections | Cross-board generalisation |
+|:---:|:---:|:---:|
+| ![](.github/assets/Inference_8.png) | ![](.github/assets/Inference_12.png) | ![](.github/assets/Inference_13.png) |
+
 ## Installation
 
 Requires Python ≥ 3.12 and TensorFlow 2.18.
