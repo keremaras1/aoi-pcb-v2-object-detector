@@ -127,12 +127,15 @@ class PCBDatasetGenerator:
             each with one or more ``template_object_*/`` sub-subdirs.
         save_dir: Directory to write full-size generated images and labels.
         crop_save_dir: Directory to write cropped images and crop labels.
-        rotation_range: Maximum IC rotation in degrees. Actual rotations are
-            drawn from a Gaussian mapped to ``[-rotation_range, rotation_range]``.
+        rotation_range: IC rotation bound in degrees. Rotations are drawn from a
+            zero-mean Gaussian with ``rotation_range`` as the ~2σ bound (about
+            95% of draws fall within ``[-rotation_range, rotation_range]``).
         img_size: Side length (pixels) of output crops after resizing.
         dataset_size: Number of images to generate per phase.
-        placement_offset_x: Maximum horizontal IC placement offset in pixels.
-        placement_offset_y: Maximum vertical IC placement offset in pixels.
+        placement_offset_x: Horizontal IC placement-offset bound in pixels, as
+            the ~2σ bound of a zero-mean Gaussian (see ``rotation_range``).
+        placement_offset_y: Vertical IC placement-offset bound in pixels, as the
+            ~2σ bound of a zero-mean Gaussian (see ``rotation_range``).
         seed: Random seed for reproducibility. Passed to both :mod:`random`
             and :mod:`numpy.random` at the start of each ``generate()`` call.
     """
@@ -173,18 +176,22 @@ class PCBDatasetGenerator:
                     self.template_objects.append(Template(subdir))
 
     def _get_rotation(self) -> float:
+        # Zero-mean Gaussian with rotation_range as the ~2-sigma bound, so about
+        # 95% of rotations fall within [-rotation_range, rotation_range] degrees.
         raw = np.random.normal(0, 1)
-        return -self.rotation_range + (2 * self.rotation_range) * (raw - 0) / 2
+        return self.rotation_range * raw / 2
 
     def _get_ic_placement(
         self, cx: float, cy: float, rotated_ic: Image.Image
     ) -> tuple[int, int, int, int]:
         """Return (paste_x, paste_y, offset_x, offset_y) for one IC."""
         width, height = rotated_ic.size
+        # Zero-mean Gaussian per axis with the placement offset as the ~2-sigma
+        # bound, so about 95% of offsets fall within [-offset, offset] pixels.
         gauss_x = np.random.normal(0, 1)
         gauss_y = np.random.normal(0, 1)
-        offset_x = round(-self.offsets[0] + 2 * self.offsets[0] * (gauss_x / 2))
-        offset_y = round(-self.offsets[1] + 2 * self.offsets[1] * (gauss_y / 2))
+        offset_x = round(self.offsets[0] * gauss_x / 2)
+        offset_y = round(self.offsets[1] * gauss_y / 2)
         paste_x = int(cx - width / 2) + offset_x
         paste_y = int(cy - height / 2) + offset_y
         return paste_x, paste_y, offset_x, offset_y
