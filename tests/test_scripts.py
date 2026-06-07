@@ -100,8 +100,9 @@ def fake_data() -> tuple[np.ndarray, np.ndarray]:
 @pytest.fixture
 def mock_model() -> MagicMock:
     m = MagicMock()
-    m.metrics_names = ["loss", "class_mAP", "mae"]
-    m.evaluate.return_value = [0.5, 0.9, 1.2]
+    # evaluate.py calls model.evaluate(..., return_dict=True), so the result is
+    # a name->value mapping rather than a bare list.
+    m.evaluate.return_value = {"loss": 0.5, "class_m_ap": 0.9, "mae": 1.2}
     m.predict.return_value = np.zeros((1, 64, 12), dtype=np.float32)
     m.fit.return_value = MagicMock(history={"loss": [0.5], "val_loss": [0.6]})
     return m

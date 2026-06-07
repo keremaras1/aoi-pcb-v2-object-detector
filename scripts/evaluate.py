@@ -168,9 +168,13 @@ def main() -> None:
     model.summary()
 
     # --- Evaluate ---
-    results = model.evaluate(X_val, y_val, batch_size=t.batch_size, verbose=1)
+    # Keras 3 groups all `compile(metrics=[...])` entries under a single
+    # "compile_metrics" wrapper, so `model.metrics_names` no longer lists them
+    # individually — `return_dict=True` is the supported way to get per-metric
+    # results keyed by name.
+    results = model.evaluate(X_val, y_val, batch_size=t.batch_size, verbose=1, return_dict=True)
     print("\nEvaluation results:")
-    for name, value in zip(model.metrics_names, results):
+    for name, value in results.items():
         print(f"  {name}: {value:.6f}")
 
     # --- Predict ---
