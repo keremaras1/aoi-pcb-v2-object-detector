@@ -9,13 +9,22 @@ The prediction tensor layout (12 values per anchor):
   y[:, :, -10:-2]  — eight corner-point offsets (tl/tr/bl/br × x/y)
   y[:, :, -2:]     — grid-cell anchor centres (cx, cy)
 
-**Singleton bug fix:** The original implementation created
-``tf.keras.metrics.*`` instances at module scope, causing their internal
-state to accumulate across epochs without resetting. Each function now
-constructs its metric object locally so every call starts from a clean state.
+``tf.keras.metrics.*`` objects own internal ``tf.Variable`` accumulators,
+which ``tf.function`` tracing (used internally by ``model.fit``/``model.evaluate``)
+only allows to be created on the first trace of a graph. The module-level
+instances below are therefore each created exactly once; every metric function
+calls ``reset_state()`` immediately before ``update_state()`` so its result
+reflects only the current batch, with no accumulation across calls.
 """
 
 import tensorflow as tf
+
+_f1_metric = tf.keras.metrics.F1Score(threshold=0.5)
+_precision_metric = tf.keras.metrics.Precision()
+_recall_metric = tf.keras.metrics.Recall()
+_mae_metric = tf.keras.metrics.MeanAbsoluteError()
+_mse_metric = tf.keras.metrics.MeanSquaredError()
+_root_mse_metric = tf.keras.metrics.RootMeanSquaredError()
 
 # ---------------------------------------------------------------------------
 # Classification metrics
@@ -77,11 +86,11 @@ def f1(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar F1 score.
     """
-    metric = tf.keras.metrics.F1Score(threshold=0.5)
+    _f1_metric.reset_state()
     class_true = tf.squeeze(y_true[:, :, 1:-10], axis=-1)
     class_pred = tf.squeeze(y_pred[:, :, 1:-10], axis=-1)
-    metric.update_state(class_true, class_pred)
-    return metric.result()
+    _f1_metric.update_state(class_true, class_pred)
+    return _f1_metric.result()
 
 
 def precision(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
@@ -94,11 +103,11 @@ def precision(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar precision value.
     """
-    metric = tf.keras.metrics.Precision()
+    _precision_metric.reset_state()
     class_true = tf.reshape(y_true[:, :, 1:-10], [-1])
     class_pred = tf.reshape(y_pred[:, :, 1:-10], [-1])
-    metric.update_state(class_true, class_pred)
-    return metric.result()
+    _precision_metric.update_state(class_true, class_pred)
+    return _precision_metric.result()
 
 
 def recall(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
@@ -111,11 +120,11 @@ def recall(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar recall value.
     """
-    metric = tf.keras.metrics.Recall()
+    _recall_metric.reset_state()
     class_true = tf.reshape(y_true[:, :, 1:-10], [-1])
     class_pred = tf.reshape(y_pred[:, :, 1:-10], [-1])
-    metric.update_state(class_true, class_pred)
-    return metric.result()
+    _recall_metric.update_state(class_true, class_pred)
+    return _recall_metric.result()
 
 
 # ---------------------------------------------------------------------------
@@ -143,10 +152,10 @@ def mae(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar MAE over positive-cell offset predictions.
     """
-    metric = tf.keras.metrics.MeanAbsoluteError()
+    _mae_metric.reset_state()
     true_off, pred_off = _positive_offsets(y_true, y_pred)
-    metric.update_state(true_off, pred_off)
-    return metric.result()
+    _mae_metric.update_state(true_off, pred_off)
+    return _mae_metric.result()
 
 
 def mse(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
@@ -159,10 +168,10 @@ def mse(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar MSE over positive-cell offset predictions.
     """
-    metric = tf.keras.metrics.MeanSquaredError()
+    _mse_metric.reset_state()
     true_off, pred_off = _positive_offsets(y_true, y_pred)
-    metric.update_state(true_off, pred_off)
-    return metric.result()
+    _mse_metric.update_state(true_off, pred_off)
+    return _mse_metric.result()
 
 
 def root_mse(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
@@ -175,7 +184,7 @@ def root_mse(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     Returns:
         Scalar RMSE over positive-cell offset predictions.
     """
-    metric = tf.keras.metrics.RootMeanSquaredError()
+    _root_mse_metric.reset_state()
     true_off, pred_off = _positive_offsets(y_true, y_pred)
-    metric.update_state(true_off, pred_off)
-    return metric.result()
+    _root_mse_metric.update_state(true_off, pred_off)
+    return _root_mse_metric.result()
