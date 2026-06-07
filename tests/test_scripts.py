@@ -16,7 +16,7 @@ import pytest
 
 from aoi_pcb_ssd.config_loader import Config
 from aoi_pcb_ssd.model.loss import AOILoss
-from aoi_pcb_ssd.model.metrics import class_mAP, mae
+from aoi_pcb_ssd.model.metrics import class_map, mae
 
 # ---------------------------------------------------------------------------
 # Module-level fixtures
@@ -100,9 +100,7 @@ def fake_data() -> tuple[np.ndarray, np.ndarray]:
 @pytest.fixture
 def mock_model() -> MagicMock:
     m = MagicMock()
-    # evaluate.py calls model.evaluate(..., return_dict=True), so the result is
-    # a name->value mapping rather than a bare list.
-    m.evaluate.return_value = {"loss": 0.5, "class_m_ap": 0.9, "mae": 1.2}
+    m.evaluate.return_value = {"loss": 0.5, "class_map": 0.9, "mae": 1.2}
     m.predict.return_value = np.zeros((1, 64, 12), dtype=np.float32)
     m.fit.return_value = MagicMock(history={"loss": [0.5], "val_loss": [0.6]})
     return m
@@ -221,9 +219,9 @@ class TestTrainMainWiring:
         # When: main() runs.
         self.train_script.main()
         compile_kwargs = self.mock_model.compile.call_args.kwargs
-        # Then: loss is an AOILoss bound method; metrics include class_mAP and mae.
+        # Then: loss is an AOILoss bound method; metrics include class_map and mae.
         assert isinstance(compile_kwargs["loss"].__self__, AOILoss)
-        assert class_mAP in compile_kwargs["metrics"]
+        assert class_map in compile_kwargs["metrics"]
         assert mae in compile_kwargs["metrics"]
 
     def test_model_saved_inside_output_dir(self) -> None:
@@ -359,7 +357,7 @@ class TestEvaluateMainWiring:
         compile_kwargs = self.mock_model.compile.call_args.kwargs
         # Then: AOILoss and both metrics are passed to compile.
         assert isinstance(compile_kwargs["loss"].__self__, AOILoss)
-        assert class_mAP in compile_kwargs["metrics"]
+        assert class_map in compile_kwargs["metrics"]
         assert mae in compile_kwargs["metrics"]
 
     def test_save_visuals_calls_draw_keypoints(self, monkeypatch: pytest.MonkeyPatch) -> None:

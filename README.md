@@ -37,7 +37,7 @@ flowchart TB
   subgraph train["④ Train · scripts/train.py"]
     TR1["SSDInputEncoder → (64, 12) targets"]
     TR2["build_custom_model / build_transfer_model"]
-    TR3["AOILoss + class_mAP / mae → model.keras"]
+    TR3["AOILoss + class_map / mae → model.keras"]
     TR1 --> TR3
     TR2 --> TR3
   end

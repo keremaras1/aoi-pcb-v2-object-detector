@@ -4,7 +4,7 @@ import pytest
 import tensorflow as tf
 
 from aoi_pcb_ssd.model.metrics import (
-    class_mAP,
+    class_map,
     f1,
     mae,
     mse,
@@ -63,7 +63,7 @@ class TestClassMAP:
         # Given/When: perfect predictions on a batch with one positive.
         y = _batch([_cell(True), _cell(False), _cell(False)])
         # Then: mAP is 1.0.
-        assert float(class_mAP(y, y)) == pytest.approx(1.0)
+        assert float(class_map(y, y)) == pytest.approx(1.0)
 
     def test_all_wrong_classification_scores_zero(self) -> None:
         # Given: one IC and one background.
@@ -71,13 +71,13 @@ class TestClassMAP:
         # When: every prediction is inverted.
         y_pred = _batch([_cell(False), _cell(True)])
         # Then: mAP is 0.0.
-        assert float(class_mAP(y_true, y_pred)) == pytest.approx(0.0)
+        assert float(class_map(y_true, y_pred)) == pytest.approx(0.0)
 
     def test_handles_never_predicted_class_without_nan(self) -> None:
         # Given: all cells are background; the IC class is never predicted.
         y = _batch([_cell(False)] * 3)
-        # When: class_mAP is computed (IC class has TP=0, FP=0 → NaN internally).
-        result = class_mAP(y, y)
+        # When: class_map is computed (IC class has TP=0, FP=0 → NaN internally).
+        result = class_map(y, y)
         # Then: NaN is replaced with 0 by the _per_class_ap guard; result is finite.
         assert tf.math.is_finite(result)
         assert float(result) == pytest.approx(0.0)

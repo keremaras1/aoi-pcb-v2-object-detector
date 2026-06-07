@@ -31,7 +31,7 @@ _root_mse_metric = tf.keras.metrics.RootMeanSquaredError()
 # ---------------------------------------------------------------------------
 
 
-def class_mAP(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def class_map(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
     """Custom mAP: mean of (precision × recall) over all foreground classes.
 
     As described in Section V.C.1 of the paper. Because the grid-centre

@@ -30,7 +30,7 @@ from aoi_pcb_ssd.config_loader import Config
 from aoi_pcb_ssd.data.data_generator import DataGenerator
 from aoi_pcb_ssd.encoding.input_encoder import SSDInputEncoder
 from aoi_pcb_ssd.model.loss import AOILoss
-from aoi_pcb_ssd.model.metrics import class_mAP, mae
+from aoi_pcb_ssd.model.metrics import class_map, mae
 from aoi_pcb_ssd.model.ssd_custom import build_custom_model
 from aoi_pcb_ssd.model.ssd_transfer import build_transfer_model
 
@@ -133,7 +133,7 @@ def main() -> None:
     model.compile(
         optimizer=Adam(**cfg.get_init_kwargs("training.optimizer")),
         loss=aoi_loss.compute_loss,
-        metrics=[class_mAP, mae],
+        metrics=[class_map, mae],
     )
 
     # --- Callbacks ---
