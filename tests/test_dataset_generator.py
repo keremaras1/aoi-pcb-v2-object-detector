@@ -113,6 +113,49 @@ class TestPureHelpers:
         np.testing.assert_allclose(result, corners, atol=1e-10)
 
 
+class TestAugmentationDistribution:
+    def _generator(self, tmp_path: Path, rotation_range: int, offset: int) -> PCBDatasetGenerator:
+        templates = _make_templates_dir(tmp_path / "templates", n_ics=1)
+        return PCBDatasetGenerator(
+            templates_dir=templates,
+            save_dir=tmp_path / "generated",
+            crop_save_dir=tmp_path / "crops",
+            rotation_range=rotation_range,
+            img_size=32,
+            dataset_size=1,
+            placement_offset_x=offset,
+            placement_offset_y=offset,
+            seed=42,
+        )
+
+    def test_rotation_is_zero_centred_with_range_as_two_sigma(self, tmp_path: Path) -> None:
+        # Given: a generator with rotation_range=10.
+        gen = self._generator(tmp_path, rotation_range=10, offset=8)
+        # When: 5000 rotations are sampled.
+        np.random.seed(0)
+        rotations = np.array([gen._get_rotation() for _ in range(5000)])
+        # Then: the distribution is centred at 0 (not -10), and ~95% of draws fall
+        # within [-range, range] — i.e. range is the 2-sigma bound (std ~= range/2).
+        assert abs(rotations.mean()) < 0.6
+        assert np.mean(np.abs(rotations) <= 10) >= 0.93
+        assert rotations.std() == pytest.approx(5.0, abs=0.7)
+
+    def test_placement_offset_is_zero_centred(self, tmp_path: Path) -> None:
+        # Given: a generator with placement offset 8 and a dummy IC cutout.
+        gen = self._generator(tmp_path, rotation_range=10, offset=8)
+        ic = Image.new("RGB", (16, 16))
+        # When: 5000 placements are sampled (each yields an x and y offset).
+        np.random.seed(0)
+        offsets = []
+        for _ in range(5000):
+            _, _, off_x, off_y = gen._get_ic_placement(48.0, 48.0, ic)
+            offsets.extend((off_x, off_y))
+        offsets = np.array(offsets)
+        # Then: offsets are centred at 0 (not -8) with range 8 as the ~2-sigma bound.
+        assert abs(offsets.mean()) < 0.6
+        assert np.mean(np.abs(offsets) <= 8) >= 0.93
+
+
 class TestTemplateLoading:
     def test_loads_template_objects(self, generator: PCBDatasetGenerator) -> None:
         assert len(generator.template_objects) == 1

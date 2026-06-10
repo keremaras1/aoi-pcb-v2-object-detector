@@ -45,14 +45,18 @@ class TestCoordinateNormalisation:
 
 
 class TestPrecomputedGrid:
-    def test_centers_attribute_set_after_build(self) -> None:
-        # Given: a GridCenters layer.
-        layer = GridCenters(_IMG, _IMG)
-        # When: the layer is called (triggering build).
-        layer(_input())
-        # Then: _centers is a constant of shape (1, H, W, 1, 2) — one per feature cell.
-        assert hasattr(layer, "_centers")
-        assert tuple(layer._centers.shape) == (1, *_FEATURE_MAP, 1, 2)
+    def test_full_grid_matches_independent_reference(self) -> None:
+        # Given: a 256×256 image with an 8×8 feature map, pixel-space coords.
+        layer = GridCenters(_IMG, _IMG, normalize_coords=False)
+        # When: the grid is produced for a single-item batch.
+        out = layer(_input()).numpy()[0, :, :, 0, :]  # (8, 8, 2) of (cx, cy)
+        # Then: every cell centre equals the independently-computed grid centre
+        # (step = 256/8 = 32; centre of cell k along an axis = 32 × (k + 0.5)),
+        # with cx varying across columns and cy across rows.
+        step = _IMG / _FEATURE_MAP[0]
+        centres = step * (np.arange(_FEATURE_MAP[0]) + 0.5)  # [16, 48, ..., 240]
+        expected = np.stack([np.tile(centres, (8, 1)), np.tile(centres[:, None], (1, 8))], axis=-1)
+        np.testing.assert_allclose(out, expected, atol=1e-6)
 
     def test_first_cell_centre_pixel_value(self) -> None:
         # Given: a 256×256 image with an 8×8 feature map, pixel-space coords.

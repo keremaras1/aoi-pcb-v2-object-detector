@@ -79,6 +79,16 @@ class TestPerpendicularRotate:
         assert coords.min() >= 0
         assert coords.max() <= 8
 
+    def test_90_degree_rotation_maps_corners_exactly(self) -> None:
+        # Given: an 8×8 image and a label with corners tl=(2,3), tr=(4,3),
+        # bl=(2,7), br=(4,7), centre=(3,5).
+        image = np.zeros((8, 8, 3), dtype=np.uint8)
+        with patch("aoi_pcb_ssd.data.augmentation.random.choice", return_value=90):
+            _, label = _chain(1.0).perpendicular_rotate(image, _label())
+        # Then: each (x, y) maps to (y, w − x) with w = 8 (the rotated width),
+        # i.e. a 90° rotation of the corner points.
+        assert list(label[0, 1:]) == [3, 6, 3, 4, 7, 6, 7, 4, 5, 5]
+
 
 class TestPhotometricTransforms:
     def test_brightness_changes_pixels(self) -> None:
