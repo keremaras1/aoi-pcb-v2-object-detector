@@ -63,6 +63,10 @@
       "min_delta": 0.001,
       "cooldown": 0,
       "min_lr": 1e-7
+    },
+    "performance": {
+      "jit_compile": false,
+      "mixed_float16": false
     }
   },
   "augmentation": {

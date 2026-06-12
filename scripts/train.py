@@ -81,6 +81,17 @@ def main() -> None:
     for gpu in gpus:
         print(f"  {gpu}")
 
+    # Opt-in accelerators (NVIDIA/CUDA). The policy must be set before the model
+    # is built so its layers adopt it.
+    perf = getattr(t, "performance", None)
+    jit_compile = bool(getattr(perf, "jit_compile", False))
+    use_mixed_float16 = bool(getattr(perf, "mixed_float16", False))
+    if use_mixed_float16:
+        tf.keras.mixed_precision.set_global_policy("mixed_float16")
+        print("Mixed precision: mixed_float16 enabled")
+    if jit_compile:
+        print("XLA JIT compilation: enabled")
+
     # --- Data loading ---
     encoder = SSDInputEncoder(
         img_height=m.img_height,
@@ -134,6 +145,7 @@ def main() -> None:
         optimizer=Adam(**cfg.get_init_kwargs("training.optimizer")),
         loss=aoi_loss.compute_loss,
         metrics=[class_map, mae],
+        jit_compile=jit_compile,
     )
 
     # --- Callbacks ---

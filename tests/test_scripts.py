@@ -80,8 +80,15 @@ _CONFIG_DICT = {
             "cooldown": 0,
             "min_lr": 1e-7,
         },
+        "performance": {
+            "jit_compile": False,
+            "mixed_float16": False
+        },
     },
-    "augmentation": {"enabled": False, "probability": 0.0},
+    "augmentation": {
+        "enabled": False,
+        "probability": 0.0
+    },
 }
 
 
@@ -255,6 +262,37 @@ class TestTrainMainWiring:
         # Then: only build_transfer_model is called.
         self._build_transfer.assert_called_once()
         self._build_custom.assert_not_called()
+
+    def test_jit_compile_defaults_to_false(self) -> None:
+        # Given: a config with performance.jit_compile = False.
+        # When: main() runs.
+        self.train_script.main()
+        # Then: compile receives jit_compile=False (the Apple-Silicon-safe default).
+        assert self.mock_model.compile.call_args.kwargs["jit_compile"] is False
+
+    def test_jit_compile_forwarded_when_enabled(self, fake_cfg: Config) -> None:
+        # Given: performance.jit_compile enabled in the config.
+        fake_cfg.training.performance.jit_compile = True
+        # When: main() runs.
+        self.train_script.main()
+        # Then: compile receives jit_compile=True.
+        assert self.mock_model.compile.call_args.kwargs["jit_compile"] is True
+
+    def test_mixed_float16_sets_global_policy_when_enabled(
+        self, fake_cfg: Config, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Given: performance.mixed_float16 enabled.
+        fake_cfg.training.performance.mixed_float16 = True
+        recorded: dict[str, str] = {}
+        monkeypatch.setattr(
+            self.train_script.tf.keras.mixed_precision,
+            "set_global_policy",
+            lambda policy: recorded.setdefault("policy", policy),
+        )
+        # When: main() runs.
+        self.train_script.main()
+        # Then: the mixed_float16 policy is activated.
+        assert recorded.get("policy") == "mixed_float16"
 
 
 # ---------------------------------------------------------------------------

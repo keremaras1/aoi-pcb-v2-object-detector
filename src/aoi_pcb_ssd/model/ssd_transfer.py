@@ -123,9 +123,11 @@ def build_transfer_model(
     offsets1_reshaped = Reshape((-1, 8), name="offsets1_reshape")(offsets1)
     centers1_reshaped = Reshape((-1, 2), name="centers1_reshape")(centers1)
 
-    classes_softmax = Activation("softmax", name="classes_softmax")(classes1_reshaped)
-
-    predictions = Concatenate(axis=2, name="predictions")(
+    # float32 output for numerical stability under a mixed_float16 policy.
+    classes_softmax = Activation("softmax", name="classes_softmax", dtype="float32")(
+        classes1_reshaped
+    )
+    predictions = Concatenate(axis=2, name="predictions", dtype="float32")(
         [classes_softmax, offsets1_reshaped, centers1_reshaped]
     )
 

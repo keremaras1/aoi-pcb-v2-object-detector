@@ -210,9 +210,11 @@ def build_custom_model(
     corners7_reshaped = Reshape((-1, 8), name="corners7_reshaped")(corners7)
     centers7_reshaped = Reshape((-1, 2), name="centers7_reshaped")(centers7)
 
-    classes_softmax = Activation("softmax", name="classes_softmax")(classes7_reshaped)
-
-    predictions = Concatenate(axis=2, name="predictions")(
+    # float32 output for numerical stability under a mixed_float16 policy.
+    classes_softmax = Activation("softmax", name="classes_softmax", dtype="float32")(
+        classes7_reshaped
+    )
+    predictions = Concatenate(axis=2, name="predictions", dtype="float32")(
         [classes_softmax, corners7_reshaped, centers7_reshaped]
     )
 

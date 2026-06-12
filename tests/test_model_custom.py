@@ -169,3 +169,18 @@ class TestGradientFlow:
         grads = tape.gradient(loss, model.trainable_weights)
         # Then: at least one trainable weight receives a non-None gradient.
         assert any(g is not None for g in grads)
+
+
+class TestMixedPrecisionOutput:
+    def test_output_stays_float32_under_mixed_float16(self) -> None:
+        # Given: a global mixed_float16 policy (the CUDA opt-in path).
+        tf.keras.mixed_precision.set_global_policy("mixed_float16")
+        try:
+            model = build_custom_model((32, 32, 3), n_classes=1)
+            y = model(tf.random.normal((1, 32, 32, 3)), training=False)
+        finally:
+            tf.keras.mixed_precision.set_global_policy("float32")
+        # Then: the output is float32 (loss-stable) and the softmax still normalises.
+        assert y.dtype == tf.float32
+        class_sums = tf.reduce_sum(y[..., :2], axis=-1)
+        assert tf.reduce_all(tf.abs(class_sums - 1.0) < 1e-3)
