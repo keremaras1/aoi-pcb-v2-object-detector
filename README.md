@@ -24,7 +24,7 @@ The detection head emits a fixed `(64, 12)` tensor per image: for each of the 8�
 ```mermaid
 flowchart TB
   subgraph mark["① Mark · scripts/mark_pcb_coords.py"]
-    M["click IC corners on a PCB photo → ic_centroids.csv"]
+    M["click IC corners on a PCB photo → *_ic_corners.csv"]
   end
   subgraph tmpl["② Template · scripts/generate_template.py"]
     T["cut IC images, fill background → templates/pcb_template_*/"]
@@ -127,10 +127,13 @@ pip install -e ".[dev,cuda]"    # Linux / WSL2 CUDA GPU
 
 ```bash
 # Mark IC corner locations on a new PCB photo
-python scripts/mark_pcb_coords.py
+python scripts/mark_pcb_coords.py --img-path path/to/pcb.jpg
 
 # Cut IC images and build the template directory
-python scripts/generate_template.py
+python scripts/generate_template.py \
+    --pcb-image path/to/pcb.jpg \
+    --corners-csv path/to/pcb_ic_corners.csv \
+    --output-dir templates/pcb_template_N/template_object_1/
 ```
 
 Twenty-seven ready-made templates are already checked into `templates/`, so you can skip straight to dataset generation.
@@ -138,12 +141,17 @@ Twenty-seven ready-made templates are already checked into `templates/`, so you 
 ### 2. Generate the dataset
 
 ```bash
-python scripts/generate_dataset.py
-# or with a custom config:
-python scripts/generate_dataset.py --config path/to/config.json
+# Training split (default)
+python scripts/generate_dataset.py --split train
+
+# Validation split
+python scripts/generate_dataset.py --split val
+
+# ...or with a custom config:
+python scripts/generate_dataset.py --split train --config path/to/config.json
 ```
 
-Composites ICs onto the templates and crops 256×256 patches (each guaranteed to contain at least one IC) into `datasets/`, with a `labels.csv` of eight-point corner annotations.
+Composites ICs onto the templates and crops 256×256 patches (each guaranteed to contain at least one IC) into `datasets/train/` (or `datasets/val/` for `--split val`), with a `labels.csv` of eight-point corner annotations.
 
 ### 3. Train
 
