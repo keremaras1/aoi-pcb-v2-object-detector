@@ -80,15 +80,9 @@ _CONFIG_DICT = {
             "cooldown": 0,
             "min_lr": 1e-7,
         },
-        "performance": {
-            "jit_compile": False,
-            "mixed_float16": False
-        },
+        "performance": {"jit_compile": False, "mixed_float16": False},
     },
-    "augmentation": {
-        "enabled": False,
-        "probability": 0.0
-    },
+    "augmentation": {"enabled": False, "probability": 0.0},
 }
 
 
