@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Data pipeline: synthetic dataset generation, augmentation, and Keras-side loading."""
 
 from aoi_pcb_ssd.data.augmentation import DataAugmentationChain

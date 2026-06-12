@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Model architectures, custom layers, loss function, and training metrics."""
 
 from aoi_pcb_ssd.model.grid_centers import GridCenters

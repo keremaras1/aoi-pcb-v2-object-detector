@@ -38,8 +38,8 @@ from aoi_pcb_ssd.model.grid_centers import GridCenters
 class ChannelSwap(tf.keras.layers.Layer):
     """Permute image channels to a user-specified order.
 
-    Replaces the upstream Lambda approach with a fully serializable layer,
-    enabling ``load_model`` to work under default ``safe_mode=True``.
+    A serializable layer, so ``load_model`` works under the default
+    ``safe_mode=True``. Original work, Copyright 2024 Kerem Aras (Apache-2.0).
 
     Args:
         order: Channel index permutation, e.g. ``[2, 1, 0]`` for RGB→BGR.
@@ -101,7 +101,7 @@ def build_custom_model(
     l2_reg = l2_regularization
     img_height, img_width, img_channels = image_size
 
-    # --- Input preprocessing (serializable; no Lambda layers) -----------------
+    # --- Input preprocessing (serializable) -----------------------------------
     x = Input(shape=(img_height, img_width, img_channels))
     x1 = x
     if subtract_mean is not None or divide_by_stddev is not None:

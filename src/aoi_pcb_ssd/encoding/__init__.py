@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """SSD encoding and decoding: anchor grid generation, label encoding, and prediction decoding."""
 
 from aoi_pcb_ssd.encoding.input_encoder import SSDInputEncoder
