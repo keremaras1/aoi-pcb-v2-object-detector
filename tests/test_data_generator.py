@@ -71,6 +71,20 @@ class TestImageLoading:
         assert X.shape == (2, 16, 16, 3)
         assert X.dtype == np.uint8
 
+    def test_parallel_load_matches_serial_reference(self, tmp_path: Path, encoder: Any) -> None:
+        # Given: twelve crops whose pixel content encodes their index, so any
+        # ordering mix-up between threads changes the loaded array.
+        for i in range(12):
+            colour = (i * 20, 255 - i * 20, i * 10)
+            Image.new("RGB", (16, 16), colour).save(tmp_path / f"PCB_crop_{i}.jpg")
+        gen = DataGenerator(tmp_path, encoder=encoder)
+        # When: images are loaded through _img_to_np.
+        gen._img_to_np()
+        # Then: the result is identical to a serial per-file load in filename order.
+        serial = np.array([np.array(Image.open(tmp_path / name)) for name in gen.img_filenames])
+        assert np.array_equal(gen.X, serial)
+        assert gen.X.dtype == serial.dtype
+
 
 class TestLabelParsing:
     def test_encoder_receives_class_id_in_first_column(

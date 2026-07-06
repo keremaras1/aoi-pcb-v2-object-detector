@@ -10,6 +10,8 @@ injected ``SSDInputEncoder`` instance.
 
 from __future__ import annotations
 
+import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -59,9 +61,20 @@ class DataGenerator:
         self.y_encoded: NDArray = np.empty(0)
 
     def _img_to_np(self) -> None:
-        arrays = []
-        for name in tqdm(self.img_filenames, desc="Loading images"):
-            arrays.append(np.array(Image.open(self.parent_dir / name)))
+        # PIL releases the GIL during JPEG decode, so threads decode in
+        # parallel; ``map`` preserves input order, keeping each image row
+        # aligned with its labels.csv row.
+        def load(name: str) -> NDArray[np.uint8]:
+            return np.array(Image.open(self.parent_dir / name))
+
+        with ThreadPoolExecutor(max_workers=min(32, os.cpu_count() or 4)) as pool:
+            arrays = list(
+                tqdm(
+                    pool.map(load, self.img_filenames),
+                    desc="Loading images",
+                    total=len(self.img_filenames),
+                )
+            )
         self.X = np.array(arrays)
 
     def _parse_csv(self) -> None:
