@@ -189,7 +189,7 @@ class TestTrainMainWiring:
         with (
             patch.object(train_script, "Config", return_value=fake_cfg),
             patch("shutil.copy") as self._copy,
-            patch.object(train_script, "DataGenerator") as MockDG,
+            patch.object(train_script, "DataGenerator") as self._data_gen,
             patch.object(train_script, "train_test_split", return_value=(X, X, y, y)),
             patch.object(
                 train_script, "build_custom_model", return_value=mock_model
@@ -198,7 +198,7 @@ class TestTrainMainWiring:
                 train_script, "build_transfer_model", return_value=mock_model
             ) as self._build_transfer,
         ):
-            MockDG.return_value.get_data.return_value = (X, y)
+            self._data_gen.return_value.get_data.return_value = (X, y)
             yield
 
     def test_output_dir_created(self) -> None:
@@ -271,6 +271,34 @@ class TestTrainMainWiring:
         self.train_script.main()
         # Then: compile receives jit_compile=True.
         assert self.mock_model.compile.call_args.kwargs["jit_compile"] is True
+
+    def test_data_generator_uses_cache_by_default(self) -> None:
+        # Given: --no-cache not passed (default argv from _setup).
+        # When: main() runs.
+        self.train_script.main()
+        # Then: the DataGenerator is constructed with caching enabled.
+        assert self._data_gen.call_args.kwargs["use_cache"] is True
+
+    def test_no_cache_flag_disables_dataset_cache(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Given: --no-cache passed.
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "train.py",
+                "--architecture",
+                "custom",
+                "--config",
+                "config.json",
+                "--output-dir",
+                str(self.output_dir),
+                "--no-cache",
+            ],
+        )
+        # When: main() runs.
+        self.train_script.main()
+        # Then: the DataGenerator is constructed with caching disabled.
+        assert self._data_gen.call_args.kwargs["use_cache"] is False
 
     def test_mixed_float16_sets_global_policy_when_enabled(
         self, fake_cfg: Config, monkeypatch: pytest.MonkeyPatch
@@ -361,7 +389,7 @@ class TestEvaluateMainWiring:
 
         with (
             patch.object(eval_script, "Config", return_value=fake_cfg),
-            patch.object(eval_script, "DataGenerator") as MockDG,
+            patch.object(eval_script, "DataGenerator") as self._data_gen,
             patch.object(
                 eval_script,
                 "train_test_split",
@@ -371,7 +399,7 @@ class TestEvaluateMainWiring:
                 "tensorflow.keras.models.load_model", return_value=mock_model
             ) as self._load_model,
         ):
-            MockDG.return_value.get_data.return_value = (X, y)
+            self._data_gen.return_value.get_data.return_value = (X, y)
             yield
 
     def test_load_model_called_with_compile_false(self) -> None:
@@ -391,6 +419,32 @@ class TestEvaluateMainWiring:
         assert isinstance(compile_kwargs["loss"].__self__, AOILoss)
         assert class_map in compile_kwargs["metrics"]
         assert mae in compile_kwargs["metrics"]
+
+    def test_data_generator_uses_cache_by_default(self) -> None:
+        # Given: --no-cache not passed (default argv from _setup).
+        # When: main() runs.
+        self.eval_script.main()
+        # Then: the DataGenerator is constructed with caching enabled.
+        assert self._data_gen.call_args.kwargs["use_cache"] is True
+
+    def test_no_cache_flag_disables_dataset_cache(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Given: --no-cache passed.
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "evaluate.py",
+                "--model-path",
+                str(self.model_file),
+                "--config",
+                "config.json",
+                "--no-cache",
+            ],
+        )
+        # When: main() runs.
+        self.eval_script.main()
+        # Then: the DataGenerator is constructed with caching disabled.
+        assert self._data_gen.call_args.kwargs["use_cache"] is False
 
     def test_save_visuals_calls_draw_keypoints(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # Given: --save-visuals flag (override the default argv set by _setup).

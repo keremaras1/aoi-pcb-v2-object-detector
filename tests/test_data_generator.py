@@ -1,8 +1,9 @@
 """Tests for the Keras-side DataGenerator."""
 
+import os
 from pathlib import Path
 from typing import Any
-from unittest.mock import create_autospec
+from unittest.mock import create_autospec, patch
 
 import numpy as np
 import pandas as pd
@@ -39,6 +40,12 @@ def encoder() -> Any:
     mock = create_autospec(SSDInputEncoder, instance=True)
     mock.return_value = np.zeros((2, 64, 12))
     return mock
+
+
+@pytest.fixture
+def real_encoder() -> SSDInputEncoder:
+    """A real encoder over a 2×2 grid, so encoded targets reflect the labels."""
+    return SSDInputEncoder(img_height=16, img_width=16, n_classes=1, predictor_sizes=[(2, 2)])
 
 
 @pytest.fixture
@@ -118,3 +125,69 @@ class TestGetData:
         X, _ = gen.get_data()
         # Then: shape is unchanged (augmentation path was exercised without modifying images).
         assert X.shape == (2, 16, 16, 3)
+
+
+class TestCaching:
+    def test_cache_hit_returns_identical_data_without_recompute(
+        self, crop_dataset: Path, real_encoder: SSDInputEncoder
+    ) -> None:
+        # Given: a first run with augmentation that populates the cache.
+        gen_fresh = DataGenerator(crop_dataset, encoder=real_encoder, probability=0.5)
+        X_fresh, y_fresh = gen_fresh.get_data()
+        # When: a second generator runs on the same directory with image
+        # decoding forbidden, so only a cache hit can produce data.
+        gen_cached = DataGenerator(crop_dataset, encoder=real_encoder, probability=0.5)
+        with patch.object(gen_cached, "_img_to_np", side_effect=AssertionError("cache miss")):
+            X_cached, y_cached = gen_cached.get_data()
+        # Then: the cached run reproduces the fresh computation exactly.
+        assert np.array_equal(X_fresh, X_cached)
+        assert np.array_equal(y_fresh, y_cached)
+
+    def test_use_cache_false_bypasses_cache(self, crop_dataset: Path, encoder: Any) -> None:
+        # Given: caching disabled.
+        gen = DataGenerator(crop_dataset, encoder=encoder, augmentation=False, use_cache=False)
+        # When: data is prepared.
+        gen.get_data()
+        # Then: no cache directory is created.
+        assert not (crop_dataset / ".cache").exists()
+
+    def test_cache_invalidated_when_input_changes(self, crop_dataset: Path, encoder: Any) -> None:
+        # Given: a populated cache, after which an image file changes.
+        DataGenerator(crop_dataset, encoder=encoder, augmentation=False).get_data()
+        img_path = crop_dataset / "PCB_crop_0.jpg"
+        Image.new("RGB", (16, 16), (200, 20, 20)).save(img_path)
+        stat = img_path.stat()
+        os.utime(img_path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000))
+        # When: a new generator runs over the changed dataset.
+        gen = DataGenerator(crop_dataset, encoder=encoder, augmentation=False)
+        with patch.object(gen, "_img_to_np", wraps=gen._img_to_np) as spy:
+            gen.get_data()
+        # Then: the changed input forces a recompute instead of a cache hit.
+        spy.assert_called_once()
+
+    def test_unreadable_cache_file_recomputed(
+        self, crop_dataset: Path, real_encoder: SSDInputEncoder
+    ) -> None:
+        # Given: a populated cache whose file is then corrupted.
+        gen_fresh = DataGenerator(crop_dataset, encoder=real_encoder, augmentation=False)
+        X_fresh, y_fresh = gen_fresh.get_data()
+        (cache_file,) = (crop_dataset / ".cache").glob("*.npz")
+        cache_file.write_bytes(b"not an npz")
+        # When: a second generator runs against the corrupt cache.
+        gen = DataGenerator(crop_dataset, encoder=real_encoder, augmentation=False)
+        X, y = gen.get_data()
+        # Then: it falls back to a recompute and returns the same data.
+        assert np.array_equal(X_fresh, X)
+        assert np.array_equal(y_fresh, y)
+
+    def test_cache_dir_parameter_overrides_default_location(
+        self, crop_dataset: Path, encoder: Any
+    ) -> None:
+        # Given: an explicit cache directory.
+        cache_dir = crop_dataset / "custom_cache"
+        gen = DataGenerator(crop_dataset, encoder=encoder, augmentation=False, cache_dir=cache_dir)
+        # When: data is prepared.
+        gen.get_data()
+        # Then: cache files land there, not in the default parent_dir/.cache.
+        assert list(cache_dir.glob("*.npz"))
+        assert not (crop_dataset / ".cache").exists()

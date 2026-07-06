@@ -169,6 +169,8 @@ python scripts/train.py --architecture custom --config path/to/config.json \
 
 Each run saves `model.keras`, a per-epoch training-log CSV, and a `config.json` snapshot to a timestamped directory under `experiments/`.
 
+The first run caches the prepared dataset (decoded, augmented, unencoded) under `datasets/<split>/.cache/` — roughly the raw pixel size of the dataset on disk — and later runs reuse it. Pass `--no-cache` to `train.py` or `evaluate.py` to force a recompute, or delete the `.cache/` directory to reclaim the space.
+
 ### 4. Evaluate
 
 ```bash
