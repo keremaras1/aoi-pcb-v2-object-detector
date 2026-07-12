@@ -68,7 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-cache",
         action="store_true",
-        help="Recompute the prepared dataset instead of reading the disk cache.",
+        help="Recompute the prepared dataset, bypassing the disk cache (neither read nor written).",
     )
     return parser.parse_args()
 
