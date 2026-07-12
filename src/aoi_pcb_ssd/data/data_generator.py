@@ -68,13 +68,19 @@ class DataGenerator:
             return np.array(Image.open(self.parent_dir / name))
 
         with ThreadPoolExecutor(max_workers=min(32, os.cpu_count() or 4)) as pool:
-            arrays = list(
-                tqdm(
-                    pool.map(load, self.img_filenames),
-                    desc="Loading images",
-                    total=len(self.img_filenames),
+            try:
+                arrays = list(
+                    tqdm(
+                        pool.map(load, self.img_filenames),
+                        desc="Loading images",
+                        total=len(self.img_filenames),
+                    )
                 )
-            )
+            except Exception:
+                # Cancel queued decodes so an unreadable file fails fast
+                # instead of after the rest of the dataset is processed.
+                pool.shutdown(wait=False, cancel_futures=True)
+                raise
         self.X = np.array(arrays)
 
     def _parse_csv(self) -> None:
