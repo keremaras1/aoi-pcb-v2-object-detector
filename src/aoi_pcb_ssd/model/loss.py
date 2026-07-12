@@ -103,7 +103,12 @@ class AOILoss:
 
         def _select_negatives():
             flat = tf.reshape(neg_cls_loss_all, [-1])
-            _, indices = tf.math.top_k(flat, k=n_neg_keep, sorted=False)
+            # top_k runs on the CPU: the tensorflow-metal kernel bakes the
+            # flattened length into its compiled graph and aborts on partial
+            # batches. Selection returns indices only, so placement does not
+            # affect the loss value.
+            with tf.device("/CPU:0"):
+                _, indices = tf.math.top_k(flat, k=n_neg_keep, sorted=False)
             mask = tf.scatter_nd(
                 indices=tf.expand_dims(indices, axis=1),
                 updates=tf.ones_like(indices, dtype=tf.int32),

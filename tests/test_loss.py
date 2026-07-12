@@ -114,6 +114,37 @@ class TestBatchSize:
         assert float(loss[1]) > 0.0
 
 
+class TestPartialBatch:
+    def test_traced_graph_matches_eager_across_batch_sizes(self) -> None:
+        # Given: a loss traced once with a dynamic batch dimension — the graph
+        # model.fit/evaluate execute when the last batch of a split is smaller
+        # than batch_size.
+        loss = AOILoss(neg_pos_ratio=3, alpha=3.0)
+        traced = tf.function(
+            loss.compute_loss,
+            input_signature=[tf.TensorSpec([None, None, 12], tf.float32)] * 2,
+        )
+        true_rows = [_cell(True, 0.0), _cell(False), _cell(False), _cell(False)]
+        full_true = tf.constant([true_rows] * 4, dtype=tf.float32)
+        full_pred = tf.constant(
+            [
+                [_cell(True, 0.1 * (i + 1)), _cell(True), _cell(False), _cell(False)]
+                for i in range(4)
+            ],
+            dtype=tf.float32,
+        )
+        # When: the same traced graph is fed a full batch, then a partial one.
+        for y_true, y_pred in (
+            (full_true, full_pred),
+            (full_true[:3], full_pred[:3]),
+        ):
+            graph_loss = traced(y_true, y_pred)
+            eager_loss = loss.compute_loss(y_true, y_pred)
+            # Then: per-sample losses from the shared graph equal the eager
+            # computation for that batch size.
+            assert graph_loss.numpy() == pytest.approx(eager_loss.numpy())
+
+
 class TestZeroPositiveBatch:
     def test_all_background_batch_loss_is_finite(self) -> None:
         # Given: an all-background batch (n_positives=0) with mispredicted cells.
