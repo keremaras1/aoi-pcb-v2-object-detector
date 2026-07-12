@@ -65,6 +65,11 @@ def parse_args() -> argparse.Namespace:
         default=15,
         help="Number of prediction overlay images to save (default: 15).",
     )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Recompute the prepared dataset, bypassing the disk cache (neither read nor written).",
+    )
     return parser.parse_args()
 
 
@@ -143,6 +148,7 @@ def main() -> None:
         parent_dir=cfg.generator.train_data.crop_save_dir,
         encoder=encoder,
         augmentation=False,
+        use_cache=not args.no_cache,
     )
     X, y = generator.get_data()
 

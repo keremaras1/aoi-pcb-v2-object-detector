@@ -56,6 +56,11 @@ def parse_args() -> argparse.Namespace:
             "Defaults to experiments/run_<timestamp>."
         ),
     )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Recompute the prepared dataset, bypassing the disk cache (neither read nor written).",
+    )
     return parser.parse_args()
 
 
@@ -107,6 +112,7 @@ def main() -> None:
         encoder=encoder,
         augmentation=cfg.augmentation.enabled,
         probability=cfg.augmentation.probability,
+        use_cache=not args.no_cache,
     )
     X, y = generator.get_data()
 
