@@ -1,5 +1,6 @@
 """Tests for the Keras-side DataGenerator."""
 
+import time
 from pathlib import Path
 from typing import Any
 from unittest.mock import create_autospec
@@ -7,7 +8,7 @@ from unittest.mock import create_autospec
 import numpy as np
 import pandas as pd
 import pytest
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 from aoi_pcb_ssd.data.data_generator import DataGenerator
 from aoi_pcb_ssd.encoding.input_encoder import SSDInputEncoder
@@ -70,6 +71,61 @@ class TestImageLoading:
         # Then: images are stacked into a uint8 array with the expected shape.
         assert X.shape == (2, 16, 16, 3)
         assert X.dtype == np.uint8
+
+    def test_parallel_load_matches_serial_reference(self, tmp_path: Path, encoder: Any) -> None:
+        # Given: twelve crops whose pixel content encodes their index, so any
+        # ordering mix-up between threads changes the loaded array.
+        for i in range(12):
+            colour = (i * 20, 255 - i * 20, i * 10)
+            Image.new("RGB", (16, 16), colour).save(tmp_path / f"PCB_crop_{i}.jpg")
+        gen = DataGenerator(tmp_path, encoder=encoder)
+        # When: images are loaded through _img_to_np.
+        gen._img_to_np()
+        # Then: the result is identical to a serial per-file load in filename order.
+        serial = np.array([np.array(Image.open(tmp_path / name)) for name in gen.img_filenames])
+        assert np.array_equal(gen.X, serial)
+        assert gen.X.dtype == serial.dtype
+
+    def test_order_preserved_when_first_image_decodes_slowest(
+        self, tmp_path: Path, encoder: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Given: eight distinct crops and an Image.open that delays crop_0,
+        # so a completion-ordered implementation would emit it last.
+        for i in range(8):
+            Image.new("RGB", (16, 16), (i * 30, 0, 0)).save(tmp_path / f"PCB_crop_{i}.jpg")
+        real_open = Image.open
+
+        def slow_open(path: Any, *args: Any, **kwargs: Any) -> Any:
+            if "PCB_crop_0" in str(path):
+                time.sleep(0.1)
+            return real_open(path, *args, **kwargs)
+
+        monkeypatch.setattr("aoi_pcb_ssd.data.data_generator.Image.open", slow_open)
+        gen = DataGenerator(tmp_path, encoder=encoder)
+        # When: images are loaded in parallel.
+        gen._img_to_np()
+        # Then: row 0 still holds crop_0's pixels despite finishing last.
+        assert np.array_equal(gen.X[0], np.array(real_open(tmp_path / "PCB_crop_0.jpg")))
+
+    def test_unreadable_image_raises(self, crop_dataset: Path, encoder: Any) -> None:
+        # Given: one crop replaced by bytes that are not a decodable image.
+        (crop_dataset / "PCB_crop_1.jpg").write_bytes(b"not a jpeg")
+        gen = DataGenerator(crop_dataset, encoder=encoder)
+        # When/Then: loading raises rather than returning a partial or
+        # misaligned array.
+        with pytest.raises(UnidentifiedImageError):
+            gen._img_to_np()
+
+    def test_load_works_when_cpu_count_unavailable(
+        self, crop_dataset: Path, encoder: Any, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Given: a platform that cannot report a CPU count.
+        monkeypatch.setattr("aoi_pcb_ssd.data.data_generator.os.cpu_count", lambda: None)
+        gen = DataGenerator(crop_dataset, encoder=encoder)
+        # When: images are loaded.
+        gen._img_to_np()
+        # Then: loading succeeds with the fallback worker count.
+        assert gen.X.shape == (2, 16, 16, 3)
 
 
 class TestLabelParsing:
